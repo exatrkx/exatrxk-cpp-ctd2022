@@ -1,0 +1,20 @@
+paths:
+    detector_dir: '../trackml/detectors.csv'
+    input_dir: '../trackml/train_500_events/'
+    output_dir: '../exatrkx-work/Inference/run200'
+models:
+    embed_ckpt_dir: '../lightning_models/embedding/checkpoints/epoch=10.ckpt'
+    filter_ckpt_dir: '../lightning_models/filtering/checkpoints/epoch=92.ckpt'
+    gnn_ckpt_dir: '../lightning_models/gnn'
+onnx_model:
+    embed_onnx: '../datanmodels/e_model.onnx'
+    filter_onnx: '../datanmodels/e_model.onnx'
+    gnn_onnx: 'ResAGNN_model.onnx'
+tf:
+    xla_flags: '--tf_xla_enable_xla_devices'
+    cpp_min_log_level: '3'
+cuts:
+    filter_cut: 0.18
+    graph_cut: 0.75
+    r_cut: 1.6
+    knn_cut: 500
