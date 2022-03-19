@@ -76,10 +76,16 @@ set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_C_FLAGS "-Wno-error=format-truncation") 
 
 add_subdirectory(libFRNN)
+find_package(Torch REQUIRED)
+find_package(cugraph REQUIRED)
 # add_subdirectory(cuGraph)
 
 add_executable(inference inference.cpp)    
 set_target_properties(inference PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-target_include_directories(inference)
-target_link_libraries(inference frnn cugraphtestutil ${TORCH_LIBRARIES)
+# target_include_directories(inference)
+# cugraphtestutil
+# target_link_libraries(inference frnn ${TORCH_LIBRARIES})
+target_link_libraries(inference 
+    PUBLIC
+    frnn cugraph::cugraph ${TORCH_LIBRARIES})

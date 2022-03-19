@@ -326,12 +326,12 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     std::vector<float> edgeWeights;
     std::vector<int32_t> trackLabels(numSpacepoints);
     std::copy(
-        edgesAfterFiltering.begin(),
-        edgesAfterFiltering.begin()+numEdgesAfterF,
+        edgesAfterF.data_ptr<int>(),
+        edgesAfterF.data_ptr<int>()+numEdgesAfterF,
         std::back_insert_iterator(rowIndices));
     std::copy(
-        edgesAfterFiltering.begin()+numEdgesAfterF,
-        edgesAfterFiltering.end(),
+        edgesAfterF.data_ptr<int>()+numEdgesAfterF,
+        edgesAfterF.data_ptr<int>() + numEdgesAfterF+numEdgesAfterF,
         std::back_insert_iterator(colIndices));
     std::copy(
         gOutput.data_ptr<float>(),
