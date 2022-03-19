@@ -23,7 +23,7 @@ using namespace torch::indexing;
 
 #include "cuda.h"
 #include "cuda_runtime_api.h"
-#include "cuGraph/mmio_read.h"
+#include "mmio_read.h"
 
 void saveCsv(torch::Tensor t, const std::string& filepath, const std::string& separator = ",")
 {
@@ -204,7 +204,6 @@ private:
 
         return stackedEdges;
         // std::cout << "copy edges to std::vector" << std::endl;
-        // std::copy(stackedEdges.data_ptr<int64_t>(), stackedEdges.data_ptr<int64_t>() + stackedEdges.numel(), std::back_inserter(edgeList)); 
     }
 
 public:
@@ -275,8 +274,8 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
 
     eInputTensorJit.push_back(eLibInputTensor.to(device));
     at::Tensor eOutput = e_model.forward(eInputTensorJit).toTensor();
-    std::cout <<"Embedding space of libtorch the first SP: ";
-    std::cout << eOutput.slice(/*dim=*/1, /*start=*/0, /*end=*/8) << std::endl;
+    std::cout <<"Embedding space of libtorch the first SP: \n";
+    std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/8) << std::endl;
     std::cout << std::endl;
     saveCsv(eOutput, "lib_debug_embedding_outputs.txt");
 
@@ -285,26 +284,26 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     // Building Edges
     // ************
     torch::Tensor edgeList = buildEdges(eOutput, numSpacepoints);
-    int64_t numEdges = edgeList.size() / 2;
-    std::cout << "Built " << numEdges<< " edges." << std::endl;
+    int64_t numEdges = edgeList.size(1) / 2;
+    std::cout << "Built " << numEdges<< " edges. " <<  edgeList.size(0) << std::endl;
+    std::cout << edgeList.slice(0, 0, 2) << std::endl;
 
     // ************
     // Filtering
     // ************
     std::cout << "Get scores for " << numEdges<< " edges." << std::endl;
-
-    int64_t numEdgesAfterF = edgesAfterF.size() / 2;
-    std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
     
     std::vector<torch::jit::IValue> fInputTensorJit;
     fInputTensorJit.push_back(eLibInputTensor.to(device));
     fInputTensorJit.push_back(edgeList.to(device));
-    at::Tensor fOutput = f_model.forward(fInputTensorJit).sigmoid();
+    at::Tensor fOutput = f_model.forward(fInputTensorJit).toTensor();
+    std::cout << "After filtering: \n";
+    std::cout << fOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/9) << std::endl;
 
     torch::Tensor filterMask = fOutput > m_cfg.filterCut;
     torch::Tensor edgesAfterF = edgeList.index({Slice(), filterMask});
-   int64_t numEdgesAfterF = edgesAfterF.size() / 2;
-
+    int64_t numEdgesAfterF = edgesAfterF.size(1) / 2;
+    std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
 
     // ************
     // GNN
@@ -312,11 +311,7 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     std::vector<torch::jit::IValue> gInputTensorJit;
     auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
     gInputTensorJit.push_back(edgesAfterF.to(device));
-    auto gOutput = g_model.forward(gInputTensorJit).toTensor();
-    
-    //gOutputCTen = gOutputCTen.sigmoid();
-    gOutput = gOutput.sigmoid();
-    // std::cout << gOutputCTen.slice(0, 0, 3) << std::endl;
+    auto gOutput = g_model.forward(gInputTensorJit).toTensor().sigmoid();
 
     // ************
     // Track Labeling with cugraph::connected_components
