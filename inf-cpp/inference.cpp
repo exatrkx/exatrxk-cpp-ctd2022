@@ -230,7 +230,7 @@ void Infer::initTrainedModels(){
         e_model.eval();
         f_model = torch::jit::load(l_filterModelPath.c_str());
         f_model.eval();
-        g_model = torch::jit::load(l_gnnModelPath.c_str());  
+        g_model = torch::jit::load(l_gnnModelPath.c_str());
         g_model.eval();
     } catch (const c10::Error& e) {
         throw std::invalid_argument("Failed to load models: " + e.msg()); 
@@ -313,15 +313,15 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
 
     // ************
     // GNN
-    // ************    
-    // std::vector<torch::jit::IValue> gInputTensorJit;
-    // auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
-    // gInputTensorJit.push_back(eLibInputTensor.to(device));
-    // gInputTensorJit.push_back(edgesAfterF.to(device));
-    // auto gOutput = g_model.forward(gInputTensorJit).toTensor()
-    // gOutput.sigmoid_();
+    // ************
+    std::vector<torch::jit::IValue> gInputTensorJit;
+    auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
+    gInputTensorJit.push_back(eLibInputTensor.to(device));
+    gInputTensorJit.push_back(edgesAfterF.to(device));
+    auto gOutput = g_model.forward(gInputTensorJit).toTensor();
+    gOutput.sigmoid_();
 
-    at::Tensor gOutput = fOutput.index({filterMask});
+    // at::Tensor gOutput = fOutput.index({filterMask});
     gOutput = gOutput.cpu();
     // torch::Tensor gOutput = torch::rand({numEdgesAfterF});
 
