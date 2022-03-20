@@ -37,6 +37,7 @@
   }
 #endif  // CUDA_RT_CALL
 
+// https://github.com/rapidsai/cugraph/blob/branch-22.02/cpp/tests/components/weakly_connected_components_test.cpp
 
 template <typename vertex_t, typename edge_t, typename weight_t>
 __global__ void weakly_connected_components(
@@ -50,7 +51,8 @@ __global__ void weakly_connected_components(
     cudaStream_t stream;
     CUDA_RT_CALL(cudaStreamCreate(&stream));
 
-    raft::handle_t handle{stream};
+    rmm::cuda_stream_view stream_view(stream);
+    raft::handle_t handle{stream_view};
 
     cugraph::graph_t<vertex_t, edge_t, weight_t, false, false> graph(handle);
 
@@ -84,20 +86,20 @@ __global__ void weakly_connected_components(
     raft::update_device(weights_v.data(), edgeWeights.data(), edgeWeights.size(), handle.get_stream());
     raft::update_device(d_vertices.data(), vertex_idx.data(),
                             vertex_idx.size(), handle.get_stream());
-    //cugraph::graph_t<vertex_t, edge_t, weight_t, false, false> graph(handle);
 
-    //std::tuple<cugraph::graph_t<vertex_t, edge_t, weight_t,store_transposed, multi_gpu>,rmm::device_uvector<vertex_t>> mygraph;
     std::cout << "create graph from edgelist" << std::endl;
+    handle.sync_stream();
+
     std::tie(graph, std::ignore) = cugraph::create_graph_from_edgelist<
       vertex_t, edge_t, weight_t, false, false>(
       handle,
-      std::move(d_vertices),
+      std::make_optional(std::move(d_vertices)),
       std::move(src_v),
       std::move(dst_v),
-      std::move(weights_v),
+      std::make_optional(std::move(weights_v)),
       cugraph::graph_properties_t{true, false},
       false, // renumber,
-      true // do expensive check
+      false // do expensive check
       );
 
     // the last two booleans are:
@@ -129,6 +131,7 @@ __global__ void weakly_connected_components(
 
     std::cout << "number of components: " << d_components.size() << std::endl;
     
+    trackLabels.reserve(d_components.size());
     raft::update_host(trackLabels.data(),
       d_components.data(), d_components.size(), handle.get_stream());
 }
