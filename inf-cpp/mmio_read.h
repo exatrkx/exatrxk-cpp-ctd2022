@@ -131,7 +131,6 @@ __global__ void weakly_connected_components(
 
     std::cout << "number of components: " << d_components.size() << std::endl;
     
-    trackLabels.reserve(d_components.size());
     raft::update_host(trackLabels.data(),
       d_components.data(), d_components.size(), handle.get_stream());
 }

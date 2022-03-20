@@ -330,25 +330,29 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     // ************
     // Track Labeling with cugraph::connected_components
     // ************
-    std::vector<int32_t> rowIndices;
-    std::vector<int32_t> colIndices;
+    using vertex_t = int32_t;
+    std::vector<vertex_t> rowIndices;
+    std::vector<vertex_t> colIndices;
     std::vector<float> edgeWeights;
-    std::vector<int32_t> trackLabels(numSpacepoints);
+    std::vector<vertex_t> trackLabels(numSpacepoints);
     std::copy(
         edgesAfterF.data_ptr<int64_t>(),
         edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
         std::back_insert_iterator(rowIndices));
-    std::cout << "start copying" << std::endl;
     std::copy(
         edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
         edgesAfterF.data_ptr<int64_t>() + numEdgesAfterF+numEdgesAfterF,
         std::back_insert_iterator(colIndices));
-        std::cout << "start copying2" << std::endl;
     std::copy(
         gOutput.data_ptr<float>(),
-        gOutput.data_ptr<float>() + 5,
+        gOutput.data_ptr<float>() + numEdgesAfterF,
         std::back_insert_iterator(edgeWeights));
-    std::cout << "start weakly connected component analysis" << std::endl;
+
+    // std::cout << "rows: " << rowIndices.size() << " " << rowIndices[0] << std::endl;
+    // std::cout << "column: " << colIndices.size() << " " << colIndices[0] << std::endl;
+    // std::cout << "weights: " << edgeWeights.size() << " " << edgeWeights[0] << std::endl;
+
+
     weakly_connected_components<int32_t,int32_t,float>(
         rowIndices, colIndices, edgeWeights, trackLabels);
 
