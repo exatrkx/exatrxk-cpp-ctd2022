@@ -29,6 +29,14 @@
 [![License](https://img.shields.io/badge/License-BSD3-lightgrey.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 # Triton Client Libraries and Examples
+```bash
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_INSTALL_PREFIX=`pwd`/install -DTRITON_ENABLE_CC_HTTP=ON -DTRITON_ENABLE_CC_GRPC=ON -DTRITON_ENABLE_PERF_ANALYZER=ON  -DTRITON_ENABLE_GPU=ON -DTRITON_ENABLE_EXAMPLES=ON -DTRITON_ENABLE_TESTS=ON ..
+$ make cc-clients
+$./install/bin/simple_http_infer_client
+```
+
 
 To simplify communication with Triton, the Triton project provides
 several client libraries and examples of how to use those
