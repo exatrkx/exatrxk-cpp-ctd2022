@@ -286,7 +286,7 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     torch::Tensor edgeList = buildEdges(eOutput, numSpacepoints);
     int64_t numEdges = edgeList.size(1) / 2;
     std::cout << "Built " << numEdges<< " edges. " <<  edgeList.size(0) << std::endl;
-    std::cout << edgeList.slice(0, 0, 2) << std::endl;
+    std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     // ************
     // Filtering
@@ -297,7 +297,7 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     fInputTensorJit.push_back(eLibInputTensor.to(device));
     fInputTensorJit.push_back(edgeList.to(device));
     at::Tensor fOutput = f_model.forward(fInputTensorJit).toTensor();
-    std::cout << "After filtering: \n";
+    std::cout << "After filtering: " << fOutput.size(0) << " " << fOutput.size(1) << std::endl;
     std::cout << fOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/9) << std::endl;
 
     torch::Tensor filterMask = fOutput > m_cfg.filterCut;
