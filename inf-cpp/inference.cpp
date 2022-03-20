@@ -348,10 +348,6 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
         gOutput.data_ptr<float>() + numEdgesAfterF,
         std::back_insert_iterator(edgeWeights));
 
-    // std::cout << "rows: " << rowIndices.size() << " " << rowIndices[0] << std::endl;
-    // std::cout << "column: " << colIndices.size() << " " << colIndices[0] << std::endl;
-    // std::cout << "weights: " << edgeWeights.size() << " " << edgeWeights[0] << std::endl;
-
 
     weakly_connected_components<int32_t,int32_t,float>(
         rowIndices, colIndices, edgeWeights, trackLabels);
