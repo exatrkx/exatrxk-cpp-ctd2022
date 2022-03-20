@@ -1,0 +1,84 @@
+artifact_library: lightning_checkpoints
+batch_config: configs/batch_gpu_default.yaml
+batch_setup: true
+callbacks: EmbeddingBuilder
+config: embedding_test.yaml
+emb_dim: 8
+emb_hidden: 512
+factor: 0.3
+hparams:
+  artifact_library: lightning_checkpoints
+  batch_config: configs/batch_gpu_default.yaml
+  batch_setup: true
+  callbacks: EmbeddingBuilder
+  config: embedding_test.yaml
+  emb_dim: 8
+  emb_hidden: 512
+  factor: 0.3
+  in_channels: 3
+  inference: false
+  input_dir: /global/cscratch1/sd/ianwang/data/HSF/10k+5k/feature_store
+  knn: 20
+  logger: tb
+  lr: 0.0001
+  margin: 1
+  max_epochs: 100
+  model_library: LightningModules
+  name: LayerlessEmbedding
+  nb_layer: 6
+  noise: true
+  output_dir: /global/cscratch1/sd/ianwang/data/HSF/10k+5k/embedding_processed
+  override: '{''callbacks'': [''EmbeddingBuilder'']}'
+  overwrite: true
+  patience: 10
+  points_per_batch: 100000
+  project: LRT(Embedding)
+  pt_background_min: 0
+  pt_signal_min: 0
+  r_test: 1.6
+  r_train: 1.6
+  r_val: 1.6
+  randomisation: 2
+  regime: &id001
+  - rp
+  - hnm
+  resume_id: null
+  set: Embedding
+  train_split: &id002
+  - 9000
+  - 1000
+  - 0
+  true_edges: layerless_true_edges
+  warmup: 80
+  weight: 10
+in_channels: 3
+inference: false
+input_dir: /global/cscratch1/sd/ianwang/data/HSF/10k+5k/feature_store
+knn: 20
+logger: tb
+lr: 0.0001
+margin: 1
+max_epochs: 100
+model_library: LightningModules
+name: LayerlessEmbedding
+nb_layer: 6
+noise: true
+output_dir: /global/cscratch1/sd/ianwang/data/HSF/10k+5k/embedding_processed
+override: '{''callbacks'': [''EmbeddingBuilder'']}'
+overwrite: true
+patience: 10
+points_per_batch: 100000
+project: LRT(Embedding)
+pt_background_min: 0
+pt_signal_min: 0
+r_test: 1.6
+r_train: 1.6
+r_val: 1.6
+randomisation: 2
+regime: *id001
+resume_id: null
+set: Embedding
+train_split: *id002
+true_edges: layerless_true_edges
+warmup: 80
+weight: 10

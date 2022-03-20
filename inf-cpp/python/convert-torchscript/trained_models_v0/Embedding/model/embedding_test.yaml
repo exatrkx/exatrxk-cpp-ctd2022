@@ -1,0 +1,38 @@
+# Input/output configuration
+input_dir: ${SCRATCH}/data/HSF/10k+5k/feature_store
+output_dir: ${SCRATCH}/data/HSF/10k+5k/embedding_processed
+project: LRT(Embedding)
+overwrite: True
+
+# Dataset parameters
+pt_signal_min: 0
+pt_background_min: 0
+train_split: [[0, 0, 5000]] # Number of [training, validation, testing] examples
+true_edges: layerless_true_edges
+noise: True
+
+# Model parameters
+in_channels: 3
+emb_hidden: 512
+nb_layer: 6
+emb_dim: 8
+weight: 10
+randomisation: 2
+points_per_batch: 100000
+r_train: 1.6
+r_val: 1.6
+r_test: 1.6
+knn: 20
+warmup: 80
+margin: 1
+lr: 0.0001
+factor: 0.3
+patience: 10
+regime: [[rp, hnm]]
+max_epochs: 100
+
+# Inference
+checkpoint_path: ${HOME}/HSFPipeline/Tracking-ML-Exa.TrkX/Pipelines/LRT/lightning_checkpoints/LRT(Embedding)/version_0/checkpoints/last.ckpt
+
+# Postprocessing
+callbacks: 
