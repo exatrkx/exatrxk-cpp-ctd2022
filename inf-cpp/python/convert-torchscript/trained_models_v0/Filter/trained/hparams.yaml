@@ -1,0 +1,48 @@
+artifact_library: lightning_checkpoints
+batch_config: configs/batch_gpu_default.yaml
+batch_setup: true
+batchnorm: false
+callbacks: FilterBuilder
+config: filter_test.yaml
+datatype_names:
+- train
+- val
+- test
+datatype_split:
+- 9000
+- 1000
+- 5000
+edges_per_batch: 500000
+emb_channels: 0
+endcaps: true
+factor: 0.3
+filter_cut: 0.05
+hidden: 512
+in_channels: 3
+inference: false
+input_dir: /global/cscratch1/sd/ianwang/data/HSF/10k+5k/embedding_processed/
+layernorm: true
+logger: tb
+lr: 1.0e-06
+max_epochs: 100
+model_library: LightningModules
+n_chunks: 8
+name: VanillaFilter
+nb_layer: 5
+noise: true
+output_dir: /global/cscratch1/sd/ianwang/data/HSF/10k+5k/filter_processed/
+override: '{''callbacks'': [''FilterBuilder'']}'
+overwrite: true
+patience: 20
+project: LRT(Filter)
+pt_background_min: 0.0
+pt_signal_min: 0.0
+ratio: 2
+regime:
+- non-ci
+- non-ci
+resume_id: null
+set: Filter
+true_edges: layerless_true_edges
+warmup: 200
+weight: 2
