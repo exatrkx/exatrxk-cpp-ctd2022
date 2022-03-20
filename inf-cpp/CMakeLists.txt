@@ -1,23 +1,7 @@
 cmake_minimum_required(VERSION 3.20.1)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-include(FetchContent)
-FetchContent_Declare(
-  rapids-cmake
-  GIT_REPOSITORY https://github.com/rapidsai/rapids-cmake.git
-  GIT_TAG        origin/branch-21.10
-  )
-FetchContent_MakeAvailable(rapids-cmake)
-
-include(rapids-cpm)
-include(rapids-cmake)
-include(rapids-cuda)
-include(rapids-export)
-include(rapids-find)
-
-rapids_cuda_init_architectures(CUGRAPH_TESTS)
-
-project(Exatrkx_Inference VERSION 0.1.0 LANGUAGES C CXX CUDA)
+project(Exatrkx_Inference VERSION 0.2.0 LANGUAGES C CXX CUDA)
 message(STATUS "CUGRAPH_TESTS: CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 
 
@@ -54,51 +38,6 @@ set(CMAKE_CUDA_ARCHITECTURES ${usable_arch_values})
 
 option(CUDA_STATIC_RUNTIME "Use CUDA static runtime" OFF)
 option(CMAKE_CUDA_LINEINFO "Enable the -lineinfo option for nvcc (useful for cuda-memcheck / profiler" OFF)
-
-###################################################################################################
-# - build type ------------------------------------------------------------------------------------
-
-# Set a default build type if none was specified
-rapids_cmake_build_type(Release)
-
-# Set the CUDA runtime CUDA targets will use
-rapids_cuda_init_runtime(USE_STATIC ${CUDA_STATIC_RUNTIME})
-
-# conda environment
-rapids_cmake_support_conda_env( conda_env MODIFY_PREFIX_PATH )
-
-###################################################################################################
-# - compiler options ------------------------------------------------------------------------------
-
-# Find the CUDAToolkit
-rapids_find_package(CUDAToolkit REQUIRED
-                    BUILD_EXPORT_SET cugraphTest-targets
-                    INSTALL_EXPORT_SET cugraphTest-targets
-                    )
-
-# find Threads (needed by cudftestutil)
-rapids_find_package(Threads REQUIRED
-                    BUILD_EXPORT_SET cugraphTest-targets
-                    INSTALL_EXPORT_SET cugraphTest-targets
-                    )
-
-###################################################################################################
-# - find blas -------------------------------------------------------------------------------------
-
-if(NOT DEFINED BLAS_LIBRARIES)
-rapids_find_package(BLAS REQUIRED 
-                    BUILD_EXPORT_SET cugraphTest-targets
-                    INSTALL_EXPORT_SET cugraphTest-targets
-              )
-else()
-  message(STATUS "Manually setting BLAS to ${BLAS_LIBRARIES}")
-endif()
-
-###################################################################################################
-# - find CPM based dependencies  ------------------------------------------------------------------
-rapids_cpm_init()
-include(cmake/get_cuco.cmake)
-include(cmake/get_nccl.cmake)
 
 set(CUGRAPH_CXX_FLAGS "")
 set(CUGRAPH_CUDA_FLAGS "")
@@ -137,11 +76,59 @@ set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_C_FLAGS "-Wno-error=format-truncation") 
 
 add_subdirectory(libFRNN)
-add_subdirectory(cuGraph)
-find_package(onnxruntime)
+find_package(Torch REQUIRED)
+find_package(cugraph REQUIRED)
+# add_subdirectory(cuGraph)
 
-add_executable(inference inference.cpp)    
-set_target_properties(inference PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+add_executable(inference inference.cpp)
+set_target_properties(inference
+PROPERTIES  BUILD_RPATH    "\$ORIGIN"
+            INSTALL_RPATH  "\$ORIGIN"
+            CXX_STANDARD                        17
+            CXX_STANDARD_REQUIRED               ON
+            CUDA_STANDARD                       17
+            CUDA_STANDARD_REQUIRED              ON
+            INTERFACE_POSITION_INDEPENDENT_CODE ON
+)
+target_compile_options(inference
+    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
+            "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>"
+)
+target_compile_definitions(inference PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
 
-target_include_directories(inference PRIVATE ${onnxruntime_INCLUDE_DIRS})
-target_link_libraries(inference frnn cugraphtestutil ${TORCH_LIBRARIES} ${onnxruntime_LIBRARY})
+target_link_libraries(inference 
+PUBLIC
+    frnn
+    cugraph::cugraph
+    ${TORCH_LIBRARIES}
+    CUDA::cublas
+    CUDA::cusparse
+    CUDA::cusolver
+    CUDA::curand
+)
+
+add_executable(test_connected_components test_connected_components.cpp)
+set_target_properties(test_connected_components
+PROPERTIES  BUILD_RPATH    "\$ORIGIN"
+            INSTALL_RPATH  "\$ORIGIN"
+            CXX_STANDARD                        17
+            CXX_STANDARD_REQUIRED               ON
+            CUDA_STANDARD                       17
+            CUDA_STANDARD_REQUIRED              ON
+            INTERFACE_POSITION_INDEPENDENT_CODE ON
+)
+target_compile_options(test_connected_components
+    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
+            "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>"
+)
+# Per-thread default stream option see https://docs.nvidia.com/cuda/cuda-runtime-api/stream-sync-behavior.html
+# The per-thread default stream does not synchronize with other streams
+target_compile_definitions(test_connected_components PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM) 
+target_link_libraries(test_connected_components
+PUBLIC
+    cugraph::cugraph
+    CUDA::cublas
+    CUDA::cusparse
+    CUDA::cusolver
+    CUDA::curand
+)

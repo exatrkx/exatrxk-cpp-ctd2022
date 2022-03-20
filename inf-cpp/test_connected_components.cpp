@@ -3,7 +3,7 @@
 int main(int argc, char** argv) {
     
     std::cout << "Begin to read" << std::endl;
-    auto file_path = "../../datanmodels/CutEdge.csv";
+    auto file_path = "../datanmodels/CutEdge.csv";
     std::ifstream f (file_path); 
     if (!f.is_open()) {
         perror (("error while opening file " + std::string(file_path)).c_str());

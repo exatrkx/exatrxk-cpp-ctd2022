@@ -41,7 +41,8 @@ class EdgeNetwork(nn.Module):
 
     def forward(self, x, edge_index):
         # Select the features of the associated nodes
-        start, end = edge_index
+        start = edge_index[0]
+        end = edge_index[1]
         x1, x2 = x[start], x[end]
         edge_inputs = torch.cat([x[start], x[end]], dim=1)
         return self.network(edge_inputs).squeeze(-1)
@@ -74,7 +75,8 @@ class NodeNetwork(nn.Module):
         )
 
     def forward(self, x, e, edge_index):
-        start, end = edge_index
+        start = edge_index[0]
+        end = edge_index[1]
         # Aggregate edge-weighted incoming/outgoing features
         #         mi = scatter_add(e[:, None] * x[start], end, dim=0, dim_size=x.shape[0])
         #         mo = scatter_add(e[:, None] * x[end], start, dim=0, dim_size=x.shape[0])
@@ -113,6 +115,7 @@ class ResAGNN(GNNBase):
             hparams["hidden_activation"],
             hparams["layernorm"],
         )
+        self.n_graph_iters = hparams['n_graph_iters']
 
     def forward(self, x, edge_index):
         input_x = x
@@ -123,7 +126,7 @@ class ResAGNN(GNNBase):
         x = torch.cat([x, input_x], dim=-1)
 
         # Loop over iterations of edge and node networks
-        for i in range(self.hparams["n_graph_iters"]):
+        for i in range(self.n_graph_iters):
             x_inital = x
 
             # Apply edge network

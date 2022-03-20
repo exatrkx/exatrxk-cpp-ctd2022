@@ -21,10 +21,9 @@ using namespace torch::indexing;
 #include <prefix_sum.h>
 #include <find_nbrs.h>
 
-#include <core/session/onnxruntime_cxx_api.h>
 #include "cuda.h"
 #include "cuda_runtime_api.h"
-#include "cuGraph/mmio_read.h"
+#include "mmio_read.h"
 
 void saveCsv(torch::Tensor t, const std::string& filepath, const std::string& separator = ",")
 {
@@ -73,39 +72,8 @@ public:
 
 private:
     void initTrainedModels();
-    
-    void runSessionWithIoBinding(
-        Ort::Session& sess,
-        std::vector<const char*>& inputNames,
-        std::vector<Ort::Value> & inputData,
-        std::vector<const char*>& outputNames,
-        std::vector<Ort::Value>&  outputData)
-    {
-        // std::cout <<"In the runSessionWithIoBinding" << std::endl;
-        if (inputNames.size() < 1) {
-            throw std::runtime_error("Onnxruntime input data maping cannot be empty");
-        }
-        assert(inputNames.size() == inputData.size());
 
-        Ort::IoBinding iobinding(sess);
-        for(size_t idx = 0; idx < inputNames.size(); ++idx){
-            iobinding.BindInput(inputNames[idx], inputData[idx]);
-        }
-
-
-        for(size_t idx = 0; idx < outputNames.size(); ++idx){
-            iobinding.BindOutput(outputNames[idx], outputData[idx]);
-        }
-
-        // std::cout <<"Before running onnx" << std::endl;
-        sess.Run(Ort::RunOptions{nullptr}, iobinding);
-
-        // std::cout <<"Quitting the runSessionWithIoBinding" << std::endl;
-        // return iobinding.GetOutputValues();
-
-    }
-
-    void buildEdges(std::vector<float>& embedFeatures, std::vector<int64_t>& edgeList, int64_t numSpacepoints)
+    torch::Tensor buildEdges(at::Tensor& embedFeatures, int64_t numSpacepoints)
     {
         torch::Device device(torch::kCUDA);
         auto options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
@@ -139,7 +107,7 @@ private:
         torch::Tensor grid_max;
         torch::Tensor grid_size;
 
-        torch::Tensor embedTensor = torch::tensor(embedFeatures, options).reshape({1, numSpacepoints, m_cfg.embeddingDim});
+        torch::Tensor embedTensor = embedFeatures.reshape({1, numSpacepoints, m_cfg.embeddingDim});
         torch::Tensor gridParamsCuda = torch::zeros({batch_size, grid_params_size}, device).to(torch::kFloat32);
         torch::Tensor r_tensor = torch::full({batch_size}, rVal, device);
         torch::Tensor lengths = torch::full({batch_size}, numSpacepoints, device);
@@ -234,8 +202,8 @@ private:
         // stackedEdges = torch::cat({keep_edges, flip_edges}, 1);
         stackedEdges = stackedEdges.toType(torch::kInt64).to(torch::kCPU);
 
-        std::cout << "copy edges to std::vector" << std::endl;
-        std::copy(stackedEdges.data_ptr<int64_t>(), stackedEdges.data_ptr<int64_t>() + stackedEdges.numel(), std::back_inserter(edgeList)); 
+        return stackedEdges;
+        // std::cout << "copy edges to std::vector" << std::endl;
     }
 
 public:
@@ -243,10 +211,6 @@ public:
     // treat trained models as private properties
 private:
     // It seems using points is a must.
-    Ort::Env* m_env;
-    Ort::Session* e_sess;
-    Ort::Session* f_sess;
-    Ort::Session* g_sess;
     torch::jit::script::Module e_model;
     torch::jit::script::Module f_model;
     torch::jit::script::Module g_model;
@@ -257,22 +221,6 @@ Infer::Infer(const Infer::Config& config): m_cfg(config){
 }
 
 void Infer::initTrainedModels(){
-    // Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "ExaTrkX");
-    m_env = new Ort::Env(ORT_LOGGING_LEVEL_WARNING, "ExaTrkX");
-    std::string embedModelPath(m_cfg.modelDir + "/embedding.onnx");
-    std::string filterModelPath(m_cfg.modelDir + "/filtering.onnx");
-    std::string gnnModelPath(m_cfg.modelDir + "/gnn.onnx");
-    // <TODO: improve the call to avoid calling copying construtors >
-
-    Ort::SessionOptions session_options;
-    session_options.SetIntraOpNumThreads(1);
-    OrtStatus* status = OrtSessionOptionsAppendExecutionProvider_CUDA(session_options, 0);
-    session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
-
-    e_sess = new Ort::Session(*m_env, embedModelPath.c_str(), session_options);
-    f_sess = new Ort::Session(*m_env, filterModelPath.c_str(), session_options);
-    g_sess = new Ort::Session(*m_env, gnnModelPath.c_str(), session_options);
-
     std::string l_embedModelPath(m_cfg.modelDir + "/torchscript/embed.pt");
     std::string l_filterModelPath(m_cfg.modelDir + "/torchscript/filter.pt");
     std::string l_gnnModelPath(m_cfg.modelDir + "/torchscript/gnn.pt");
@@ -282,19 +230,14 @@ void Infer::initTrainedModels(){
         e_model.eval();
         f_model = torch::jit::load(l_filterModelPath.c_str());
         f_model.eval();
-        g_model = torch::jit::load(l_gnnModelPath.c_str());  
+        g_model = torch::jit::load(l_gnnModelPath.c_str());
         g_model.eval();
- } 
-    catch (const c10::Error& e) {   
+    } catch (const c10::Error& e) {
         throw std::invalid_argument("Failed to load models: " + e.msg()); 
     }
 }
 
 Infer::~Infer(){
-    delete e_sess;
-    delete f_sess;
-    delete g_sess;
-    delete m_env;
 }
 
 // The main function that runs the Exa.TrkX inference pipeline
@@ -311,11 +254,7 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     const std::string filtering_outname = "debug_filtering_scores.txt";
     torch::Device device(torch::kCUDA);
 
-    Ort::AllocatorWithDefaultOptions allocator;
-    auto memoryInfo = Ort::MemoryInfo::CreateCpu(
-        OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
-
-    // printout the r,phi,z of the first spacepoint
+     // printout the r,phi,z of the first spacepoint
     std::cout <<"First spacepoint information: ";
     std::copy(inputValues.begin(), inputValues.begin() + 3,
               std::ostream_iterator<float>(std::cout, " "));
@@ -326,205 +265,89 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     // ************
 
     int64_t numSpacepoints = inputValues.size() / m_cfg.spacepointFeatures;
-    std::vector<int64_t> eInputShape{numSpacepoints, m_cfg.spacepointFeatures};
-
-    std::vector<const char*> eInputNames{"sp_features"};
-    std::vector<Ort::Value> eInputTensor;
-    eInputTensor.push_back(
-        Ort::Value::CreateTensor<float>(
-            memoryInfo, inputValues.data(), inputValues.size(),
-            eInputShape.data(), eInputShape.size())
-    );
-
-    std::vector<float> eOutputData(numSpacepoints*m_cfg.embeddingDim);
-    std::vector<const char*> eOutputNames{"embedding_output"};
-    std::vector<int64_t> eOutputShape{numSpacepoints, m_cfg.embeddingDim};
-    std::vector<Ort::Value> eOutputTensor;
-    eOutputTensor.push_back(
-        Ort::Value::CreateTensor<float>(
-            memoryInfo, eOutputData.data(), eOutputData.size(),
-            eOutputShape.data(), eOutputShape.size())
-    );
-    runSessionWithIoBinding(*e_sess, eInputNames, eInputTensor, eOutputNames, eOutputTensor);
-    
-    std::cout <<"Embedding space of the first SP: ";
-    std::copy(eOutputData.begin(), eOutputData.begin() + m_cfg.embeddingDim,
-              std::ostream_iterator<float>(std::cout, " "));
-    std::cout << std::endl;
-    if (debug){
-        std::fstream out(embedding_outname, out.out);
-        if (!out.is_open()){
-            std::cout << "failed to open " << embedding_outname << '\n';
-        } else {
-            std::copy(eOutputData.begin(), eOutputData.end(),
-                    std::ostream_iterator<float>(out, " "));
-        }
-    }
-    
     std::vector<torch::jit::IValue> eInputTensorJit;
     auto e_opts = torch::TensorOptions().dtype(torch::kFloat32);
-    torch::Tensor eLibInputTensor = torch::from_blob(inputValues.data(), {numSpacepoints, m_cfg.spacepointFeatures}, e_opts).to(torch::kFloat32);
-    //std::cout << eLibInputTensor << std::endl;
-    std::cout <<"Done "<<inputValues.size()<<std::endl;
+    torch::Tensor eLibInputTensor = torch::from_blob(
+        inputValues.data(),
+        {numSpacepoints, m_cfg.spacepointFeatures},
+        e_opts).to(torch::kFloat32);
+
     eInputTensorJit.push_back(eLibInputTensor.to(device));
-    std::cout <<"Jit vector"<<std::endl;
     at::Tensor eOutput = e_model.forward(eInputTensorJit).toTensor();
-    std::cout <<"Embedding space of libtorch the first SP: ";
-    std::cout << eOutput.slice(/*dim=*/1, /*start=*/0, /*end=*/8) << std::endl;
+    std::cout <<"Embedding space of libtorch the first SP: \n";
+    std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
     std::cout << std::endl;
     saveCsv(eOutput, "lib_debug_embedding_outputs.txt");
+
     
     // ************
     // Building Edges
     // ************
-    std::vector<int64_t> edgeList;
-    buildEdges(eOutputData, edgeList, numSpacepoints);
-    int64_t numEdges = edgeList.size() / 2;
-    std::cout << "Built " << numEdges<< " edges." << std::endl;
-
-
-    std::copy(edgeList.begin(), edgeList.begin() + 10,
-              std::ostream_iterator<int64_t>(std::cout, " "));
-    std::cout << std::endl;
-    std::copy(edgeList.begin()+numEdges, edgeList.begin()+numEdges+10,
-              std::ostream_iterator<int64_t>(std::cout, " "));
-    std::cout << std::endl;
-
-    if (debug){
-        std::fstream out(edgelist_outname, out.out);
-        if (!out.is_open()){
-            std::cout << "failed to open " << edgelist_outname << '\n';
-        } else {
-            std::copy(edgeList.begin(), edgeList.end(),
-                    std::ostream_iterator<int64_t>(out, " "));
-        }
-    }
+    torch::Tensor edgeList = buildEdges(eOutput, numSpacepoints);
+    int64_t numEdges = edgeList.size(1);
+    std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
+    std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     // ************
     // Filtering
     // ************
-    std::vector<const char*> fInputNames{"f_nodes", "f_edges"};
-    std::vector<Ort::Value> fInputTensor;
-    fInputTensor.push_back(
-        std::move(eInputTensor[0])
-    );
-    std::vector<int64_t> fEdgeShape{2, numEdges};
-    fInputTensor.push_back(
-        Ort::Value::CreateTensor<int64_t>(
-            memoryInfo, edgeList.data(), edgeList.size(),
-            fEdgeShape.data(), fEdgeShape.size())
-    );
-
-    // filtering outputs
-    std::vector<const char*> fOutputNames{"f_edge_score"};
-    std::vector<float> fOutputData(numEdges);
-    std::vector<int64_t> fOutputShape{numEdges, 1};
-    std::vector<Ort::Value> fOutputTensor;
-    fOutputTensor.push_back(
-        Ort::Value::CreateTensor<float>(
-            memoryInfo, fOutputData.data(), fOutputData.size(), 
-            fOutputShape.data(), fOutputShape.size())
-    );
-    runSessionWithIoBinding(*f_sess, fInputNames, fInputTensor, fOutputNames, fOutputTensor);
-
     std::cout << "Get scores for " << numEdges<< " edges." << std::endl;
-    // However, I have to convert those numbers to a score by applying sigmoid!
-    // Use torch::tensor
-    torch::Tensor edgeListCTen = torch::tensor(edgeList, {torch::kInt64});
-    edgeListCTen = edgeListCTen.reshape({2, numEdges});
-
-    torch::Tensor fOutputCTen = torch::tensor(fOutputData, {torch::kFloat32});
-    fOutputCTen = fOutputCTen.sigmoid();
-
-    if (debug){
-        std::fstream out(filtering_outname, out.out);
-        if (!out.is_open()){
-            std::cout << "failed to open " << filtering_outname << '\n';
-        } else {
-            std::copy(fOutputCTen.data_ptr<float>(), fOutputCTen.data_ptr<float>() + fOutputCTen.numel(),
-                    std::ostream_iterator<float>(out, " "));
-        }
-    }
-    // std::cout << fOutputCTen.slice(0, 0, 3) << std::endl;
-    torch::Tensor filterMask = fOutputCTen > m_cfg.filterCut;
-    torch::Tensor edgesAfterFCTen = edgeListCTen.index({Slice(), filterMask});
-
-
-    std::vector<int64_t> edgesAfterFiltering;
-    std::copy(
-        edgesAfterFCTen.data_ptr<int64_t>(),
-        edgesAfterFCTen.data_ptr<int64_t>() + edgesAfterFCTen.numel(),
-        std::back_inserter(edgesAfterFiltering));
-
-    int64_t numEdgesAfterF = edgesAfterFiltering.size() / 2;
-    std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
     
     std::vector<torch::jit::IValue> fInputTensorJit;
     fInputTensorJit.push_back(eLibInputTensor.to(device));
-    auto f_opts = torch::TensorOptions().dtype(torch::kInt64);
-    torch::Tensor fLibInputTensor = torch::from_blob(edgeList.data(), {2, numEdges}, f_opts).to(torch::kInt64);
-    fInputTensorJit.push_back(fLibInputTensor.to(device));
+    fInputTensorJit.push_back(edgeList.to(device));
     at::Tensor fOutput = f_model.forward(fInputTensorJit).toTensor();
-    
+    std::cout << "After filtering: " << fOutput.size(0) << " " << fOutput.size(1) << std::endl;
+    fOutput.squeeze_();
+    fOutput.sigmoid_();
+
+    std::cout << fOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/9) << std::endl;
+
+    torch::Tensor filterMask = fOutput > m_cfg.filterCut;
+    torch::Tensor edgesAfterF = edgeList.index({Slice(), filterMask});
+    edgesAfterF = edgesAfterF.to(torch::kInt64);
+    int64_t numEdgesAfterF = edgesAfterF.size(1);
+    std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
+    std::cout << edgesAfterF.slice(1, 0, 5) << std::endl;
+
 
     // ************
     // GNN
     // ************
-    std::vector<const char*> gInputNames{"g_nodes", "g_edges"};
-    std::vector<Ort::Value> gInputTensor;
-    gInputTensor.push_back(
-        std::move(fInputTensor[0])
-    );
-    std::vector<int64_t> gEdgeShape{2, numEdgesAfterF};
-    gInputTensor.push_back(
-        Ort::Value::CreateTensor<int64_t>(
-            memoryInfo, edgesAfterFiltering.data(), edgesAfterFiltering.size(),
-            gEdgeShape.data(), gEdgeShape.size())
-    );
-    // gnn outputs
-    std::vector<const char*> gOutputNames{"gnn_edge_score"};
-    std::vector<float> gOutputData(numEdgesAfterF);
-    std::vector<int64_t> gOutputShape{numEdgesAfterF};
-    std::vector<Ort::Value> gOutputTensor;
-    gOutputTensor.push_back(
-        Ort::Value::CreateTensor<float>(
-            memoryInfo, gOutputData.data(), gOutputData.size(), 
-            gOutputShape.data(), gOutputShape.size())
-    );
-    runSessionWithIoBinding(*g_sess, gInputNames, gInputTensor, gOutputNames, gOutputTensor);
-
-    torch::Tensor gOutputCTen = torch::tensor(gOutputData, {torch::kFloat32});
-
-    
     std::vector<torch::jit::IValue> gInputTensorJit;
     auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
-    torch::Tensor gLibInputTensor = torch::from_blob(edgesAfterFiltering.data(), {2, numEdgesAfterF}, g_opts).to(torch::kInt64);
-    gInputTensorJit.push_back(gLibInputTensor.to(device));
+    gInputTensorJit.push_back(eLibInputTensor.to(device));
+    gInputTensorJit.push_back(edgesAfterF.to(device));
     auto gOutput = g_model.forward(gInputTensorJit).toTensor();
-    
-    //gOutputCTen = gOutputCTen.sigmoid();
-    gOutputCTen = gOutputCTen.sigmoid();
-    // std::cout << gOutputCTen.slice(0, 0, 3) << std::endl;
+    gOutput.sigmoid_();
 
+    // at::Tensor gOutput = fOutput.index({filterMask});
+    gOutput = gOutput.cpu();
+    // torch::Tensor gOutput = torch::rand({numEdgesAfterF});
+
+    std::cout << "GNN scores for " << gOutput.size(0) << " edges." << std::endl;
+    std::cout << gOutput.slice(0, 0, 5) << std::endl;
     // ************
     // Track Labeling with cugraph::connected_components
     // ************
-    std::vector<int32_t> rowIndices;
-    std::vector<int32_t> colIndices;
+    using vertex_t = int32_t;
+    std::vector<vertex_t> rowIndices;
+    std::vector<vertex_t> colIndices;
     std::vector<float> edgeWeights;
-    std::vector<int32_t> trackLabels(numSpacepoints);
+    std::vector<vertex_t> trackLabels(numSpacepoints);
     std::copy(
-        edgesAfterFiltering.begin(),
-        edgesAfterFiltering.begin()+numEdgesAfterF,
+        edgesAfterF.data_ptr<int64_t>(),
+        edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
         std::back_insert_iterator(rowIndices));
     std::copy(
-        edgesAfterFiltering.begin()+numEdgesAfterF,
-        edgesAfterFiltering.end(),
+        edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
+        edgesAfterF.data_ptr<int64_t>() + numEdgesAfterF+numEdgesAfterF,
         std::back_insert_iterator(colIndices));
     std::copy(
-        gOutputCTen.data_ptr<float>(),
-        gOutputCTen.data_ptr<float>() + numEdgesAfterF,
+        gOutput.data_ptr<float>(),
+        gOutput.data_ptr<float>() + numEdgesAfterF,
         std::back_insert_iterator(edgeWeights));
+
 
     weakly_connected_components<int32_t,int32_t,float>(
         rowIndices, colIndices, edgeWeights, trackLabels);
