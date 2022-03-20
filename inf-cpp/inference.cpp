@@ -275,7 +275,7 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     eInputTensorJit.push_back(eLibInputTensor.to(device));
     at::Tensor eOutput = e_model.forward(eInputTensorJit).toTensor();
     std::cout <<"Embedding space of libtorch the first SP: \n";
-    std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/8) << std::endl;
+    std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
     std::cout << std::endl;
     saveCsv(eOutput, "lib_debug_embedding_outputs.txt");
 
@@ -284,8 +284,8 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     // Building Edges
     // ************
     torch::Tensor edgeList = buildEdges(eOutput, numSpacepoints);
-    int64_t numEdges = edgeList.size(1) / 2;
-    std::cout << "Built " << numEdges<< " edges. " <<  edgeList.size(0) << std::endl;
+    int64_t numEdges = edgeList.size(1);
+    std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
     std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     // ************
@@ -298,21 +298,35 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     fInputTensorJit.push_back(edgeList.to(device));
     at::Tensor fOutput = f_model.forward(fInputTensorJit).toTensor();
     std::cout << "After filtering: " << fOutput.size(0) << " " << fOutput.size(1) << std::endl;
+    fOutput.squeeze_();
+    fOutput.sigmoid_();
+
     std::cout << fOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/9) << std::endl;
 
     torch::Tensor filterMask = fOutput > m_cfg.filterCut;
     torch::Tensor edgesAfterF = edgeList.index({Slice(), filterMask});
-    int64_t numEdgesAfterF = edgesAfterF.size(1) / 2;
+    edgesAfterF = edgesAfterF.to(torch::kInt64);
+    int64_t numEdgesAfterF = edgesAfterF.size(1);
     std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
+    std::cout << edgesAfterF.slice(1, 0, 5) << std::endl;
+
 
     // ************
     // GNN
     // ************    
-    std::vector<torch::jit::IValue> gInputTensorJit;
-    auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
-    gInputTensorJit.push_back(edgesAfterF.to(device));
-    auto gOutput = g_model.forward(gInputTensorJit).toTensor().sigmoid();
+    // std::vector<torch::jit::IValue> gInputTensorJit;
+    // auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
+    // gInputTensorJit.push_back(eLibInputTensor.to(device));
+    // gInputTensorJit.push_back(edgesAfterF.to(device));
+    // auto gOutput = g_model.forward(gInputTensorJit).toTensor()
+    // gOutput.sigmoid_();
 
+    at::Tensor gOutput = fOutput.index({filterMask});
+    gOutput = gOutput.cpu();
+    // torch::Tensor gOutput = torch::rand({numEdgesAfterF});
+
+    std::cout << "GNN scores for " << gOutput.size(0) << " edges." << std::endl;
+    std::cout << gOutput.slice(0, 0, 5) << std::endl;
     // ************
     // Track Labeling with cugraph::connected_components
     // ************
@@ -321,18 +335,20 @@ void Infer::getTracks(std::vector<float>& inputValues, std::vector<int>& spacepo
     std::vector<float> edgeWeights;
     std::vector<int32_t> trackLabels(numSpacepoints);
     std::copy(
-        edgesAfterF.data_ptr<int>(),
-        edgesAfterF.data_ptr<int>()+numEdgesAfterF,
+        edgesAfterF.data_ptr<int64_t>(),
+        edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
         std::back_insert_iterator(rowIndices));
+    std::cout << "start copying" << std::endl;
     std::copy(
-        edgesAfterF.data_ptr<int>()+numEdgesAfterF,
-        edgesAfterF.data_ptr<int>() + numEdgesAfterF+numEdgesAfterF,
+        edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
+        edgesAfterF.data_ptr<int64_t>() + numEdgesAfterF+numEdgesAfterF,
         std::back_insert_iterator(colIndices));
+        std::cout << "start copying2" << std::endl;
     std::copy(
         gOutput.data_ptr<float>(),
-        gOutput.data_ptr<float>() + numEdgesAfterF,
+        gOutput.data_ptr<float>() + 5,
         std::back_insert_iterator(edgeWeights));
-
+    std::cout << "start weakly connected component analysis" << std::endl;
     weakly_connected_components<int32_t,int32_t,float>(
         rowIndices, colIndices, edgeWeights, trackLabels);
 

@@ -96,7 +96,9 @@ __global__ void weakly_connected_components(
       std::move(dst_v),
       std::move(weights_v),
       cugraph::graph_properties_t{true, false},
-      false);
+      false, // renumber,
+      true // do expensive check
+      );
 
     // the last two booleans are:
     // store_transposed and multi-gpu
