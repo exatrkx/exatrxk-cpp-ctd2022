@@ -103,27 +103,3 @@ PUBLIC
     cugraph
     ${TORCH_LIBRARIES}
 )
-
-add_executable(test_connected_components test_connected_components.cpp)
-set_target_properties(test_connected_components
-PROPERTIES  BUILD_RPATH    "\$ORIGIN"
-            INSTALL_RPATH  "\$ORIGIN"
-            CXX_STANDARD                        17
-            CXX_STANDARD_REQUIRED               ON
-            CUDA_STANDARD                       17
-            CUDA_STANDARD_REQUIRED              ON
-            INTERFACE_POSITION_INDEPENDENT_CODE ON
-)
-target_compile_options(test_connected_components
-    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
-            "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>"
-)
-# Per-thread default stream option see https://docs.nvidia.com/cuda/cuda-runtime-api/stream-sync-behavior.html
-# The per-thread default stream does not synchronize with other streams
-target_compile_definitions(test_connected_components PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM) 
-target_link_libraries(test_connected_components
-PUBLIC
-    frnn
-    cugraph
-    ${TORCH_LIBRARIES}
-)
