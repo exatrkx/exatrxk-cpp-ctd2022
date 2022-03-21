@@ -78,7 +78,8 @@ set(CMAKE_C_FLAGS "-Wno-error=format-truncation")
 add_subdirectory(libFRNN)
 find_package(Torch REQUIRED)
 find_package(cugraph REQUIRED)
-# add_subdirectory(cuGraph)
+find_package(CUDA REQUIRED)
+find_package(Boost REQUIRED)
 
 add_executable(inference inference.cpp)
 set_target_properties(inference
@@ -99,12 +100,8 @@ target_compile_definitions(inference PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
 target_link_libraries(inference 
 PUBLIC
     frnn
-    cugraph::cugraph
+    cugraph
     ${TORCH_LIBRARIES}
-    CUDA::cublas
-    CUDA::cusparse
-    CUDA::cusolver
-    CUDA::curand
 )
 
 add_executable(test_connected_components test_connected_components.cpp)
@@ -126,9 +123,7 @@ target_compile_options(test_connected_components
 target_compile_definitions(test_connected_components PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM) 
 target_link_libraries(test_connected_components
 PUBLIC
-    cugraph::cugraph
-    CUDA::cublas
-    CUDA::cusparse
-    CUDA::cusolver
-    CUDA::curand
+    frnn
+    cugraph
+    ${TORCH_LIBRARIES}
 )
