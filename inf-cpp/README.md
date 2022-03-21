@@ -7,7 +7,9 @@ The exa.trkx pipeline used for the C++ inference
 First launch an interactive docker container
 
 ```bash
-docker run -it --rm --gpus all --ipc=host -v $PWD:$PWD -w $PWD docexoty/exatrkx:torch-rapids bash
+docker run -it --rm --gpus all --ipc=host \
+  --ulimit memlock=-1 --ulimit stack=67108864 \
+  -v $PWD:$PWD -w $PWD docexoty/exatrkx:triton-rapids bash
 ```
 
 then 
