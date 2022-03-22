@@ -1,35 +1,65 @@
 add_subdirectory(libFRNN)
 
 add_library(
-  ActsPluginExaTrkX SHARED
+  ActsPluginExaTrkXTorch SHARED
   src/ExaTrkXTrackFinding.cpp)
-
-# set_target_properties(ActsPluginExaTrkX PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
+set_target_properties(ActsPluginExaTrkXTorch
+PROPERTIES  BUILD_RPATH    "\$ORIGIN"
+            INSTALL_RPATH  "\$ORIGIN"
+            CXX_STANDARD                        17
+            CXX_STANDARD_REQUIRED               ON
+            CUDA_STANDARD                       17
+            CUDA_STANDARD_REQUIRED              ON
+            INTERFACE_POSITION_INDEPENDENT_CODE ON
+            CUDA_SEPARABLE_COMPILATION          ON
+)
+target_compile_options(ActsPluginExaTrkXTorch
+    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
+            "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>")
+target_compile_definitions(ActsPluginExaTrkXTorch PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
 target_include_directories(
-  ActsPluginExaTrkX
+  ActsPluginExaTrkXTorch
   PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-
 target_include_directories(
-  ActsPluginExaTrkX
+  ActsPluginExaTrkXTorch
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 
 )
-
 target_link_libraries(
-  ActsPluginExaTrkX
+  ActsPluginExaTrkXTorch
+  PUBLIC
+    ${TORCH_LIBRARIES}
+)
+target_link_libraries(
+  ActsPluginExaTrkXTorch
   PRIVATE
     frnn cugraph ${TORCH_LIBRARIES}
 )
 
-install(
-  TARGETS ActsPluginExaTrkX
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+# install(
+#   TARGETS ActsPluginExaTrkXTorch
+#   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-install(
-    DIRECTORY include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# install(
+#     DIRECTORY include/
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+#### ActsPluginExaTrkXTriton
+add_library(ActsPluginExaTrkXTriton
+SHARED
+  src/ExaTrkXTrackFindingTriton.cpp)
+target_include_directories(
+    ActsPluginExaTrkXTriton
+    PUBLIC 
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  )
+target_link_libraries(ActsPluginExaTrkXTriton
+PUBLIC
+  /workspace/install/lib/libgrpcclient.so
+  /workspace/build/third-party/protobuf/lib/libprotobuf.a
+)

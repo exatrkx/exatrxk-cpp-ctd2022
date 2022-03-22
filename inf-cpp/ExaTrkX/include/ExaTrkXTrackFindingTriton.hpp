@@ -8,7 +8,7 @@
 #include <torch/script.h>
 using namespace torch::indexing;
 
-class ExaTrkXTrackFinding
+class ExaTrkXTrackFindingTriton
 {
 public:
     struct Config{
@@ -23,8 +23,8 @@ public:
     };
 
 
-    ExaTrkXTrackFinding(const Config& config);
-    virtual ~ExaTrkXTrackFinding() {}
+    ExaTrkXTrackFindingTriton(const Config& config);
+    virtual ~ExaTrkXTrackFindingTriton() {}
 
     void getTracks(
         std::vector<float>& inputValues,
@@ -39,7 +39,4 @@ private:
 
 private:
     Config m_cfg;
-    torch::jit::script::Module e_model;
-    torch::jit::script::Module f_model;
-    torch::jit::script::Module g_model;
 };

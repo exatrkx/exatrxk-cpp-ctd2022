@@ -50,7 +50,6 @@ endif(CMAKE_COMPILER_IS_GNUCXX)
 message("-- Building for GPU_ARCHS = ${CMAKE_CUDA_ARCHITECTURES}")
 
 list(APPEND CUGRAPH_CUDA_FLAGS --expt-extended-lambda --expt-relaxed-constexpr)
-#list(APPEND CUGRAPH_CUDA_FLAGS -Werror=cross-execution-space-call -Wno-deprecated-declarations -Xptxas=--disable-warnings)
 list(APPEND CUGRAPH_CUDA_FLAGS -Xcompiler=-Wall,-Wno-error=sign-compare,-Wno-error=unused-but-set-variable)
 list(APPEND CUGRAPH_CUDA_FLAGS -Xfatbin=-compress-all)
 
@@ -75,38 +74,55 @@ set(CMAKE_CUDA_ARCHITECTURES 70)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_C_FLAGS "-Wno-error=format-truncation") 
 
-add_subdirectory(libFRNN)
 find_package(Torch REQUIRED)
 find_package(cugraph REQUIRED)
-find_package(CUDA REQUIRED)
 find_package(Boost REQUIRED)
 
-add_executable(inference inference.cpp)
-set_target_properties(inference
-PROPERTIES  BUILD_RPATH    "\$ORIGIN"
-            INSTALL_RPATH  "\$ORIGIN"
-            CXX_STANDARD                        17
-            CXX_STANDARD_REQUIRED               ON
-            CUDA_STANDARD                       17
-            CUDA_STANDARD_REQUIRED              ON
-            INTERFACE_POSITION_INDEPENDENT_CODE ON
-)
-target_compile_options(inference
-    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
-            "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>"
-)
-target_compile_definitions(inference PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
+find_package(TritonCore CONFIG REQUIRED)
+find_package(TritonCommon CONFIG REQUIRED)
+find_package(TritonClient CONFIG REQUIRED COMPONENTS TritonClient::triton-client)
 
-target_link_libraries(inference 
-PUBLIC
-    frnn
-    cugraph
-    ${TORCH_LIBRARIES}
-    /workspace/install/lib/libgrpcclient.so
-    /exatrkx/build/_deps/repo-core-build/libtritonserver.so
-)
-target_include_directories(
-  inference
-  PRIVATE
-    /workspace/install/include
-)
+add_subdirectory(ExaTrkX)
+
+add_executable(inference inference.cpp)
+target_link_libraries(inference PUBLIC ActsPluginExaTrkXTorch)
+
+
+add_executable(inference_client inference_client.cpp)
+# target_link_libraries(inference
+#   PUBLIC
+# #   /workspace/install/lib/libgrpcclient_static.a
+#   # /workspace/install/lib/libgrpcclient.so
+#   # /workspace/build/third-party/protobuf/lib/libprotobuf.a
+# )
+# target_link_libraries(inference 
+#   PUBLIC
+#     frnn
+#     cugraph
+#     # ${TORCH_LIBRARIES}
+# )
+
+
+# set_target_properties(inference
+# PROPERTIES  BUILD_RPATH    "\$ORIGIN"
+#             INSTALL_RPATH  "\$ORIGIN"
+#             CXX_STANDARD                        17
+#             CXX_STANDARD_REQUIRED               ON
+#             CUDA_STANDARD                       17
+#             CUDA_STANDARD_REQUIRED              ON
+#             INTERFACE_POSITION_INDEPENDENT_CODE ON
+# )
+# target_compile_options(inference
+#     PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
+#             "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>"
+# )
+# target_compile_definitions(inference PUBLIC TRITON_ENABLE_GPU)
+# target_compile_definitions(inference PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
+# target_compile_definitions(inference PUBLIC CUDA_SEPARABLE_COMPILATION ON)
+
+# target_include_directories(
+#   inference
+#   PUBLIC
+#     /workspace/install/include
+#     /usr/local/cuda/include
+# )
