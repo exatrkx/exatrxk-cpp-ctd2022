@@ -4,10 +4,6 @@
 #include <vector>
 #include <memory>
 
-#include <torch/torch.h>
-#include <torch/script.h>
-using namespace torch::indexing;
-
 class ExaTrkXTrackFindingTriton
 {
 public:
@@ -35,7 +31,6 @@ public:
 
 private:
     void initTrainedModels();
-    torch::Tensor buildEdges(at::Tensor& embedFeatures, int64_t numSpacepoints) const;
 
 private:
     Config m_cfg;

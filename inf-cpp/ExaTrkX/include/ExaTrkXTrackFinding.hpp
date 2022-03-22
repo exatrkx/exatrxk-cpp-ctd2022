@@ -35,7 +35,6 @@ public:
 
 private:
     void initTrainedModels();
-    torch::Tensor buildEdges(at::Tensor& embedFeatures, int64_t numSpacepoints) const;
 
 private:
     Config m_cfg;
