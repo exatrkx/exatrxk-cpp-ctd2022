@@ -102,4 +102,11 @@ PUBLIC
     frnn
     cugraph
     ${TORCH_LIBRARIES}
+    /workspace/install/lib/libgrpcclient.so
+    /exatrkx/build/_deps/repo-core-build/libtritonserver.so
+)
+target_include_directories(
+  inference
+  PRIVATE
+    /workspace/install/include
 )

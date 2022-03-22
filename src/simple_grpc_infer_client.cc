@@ -69,7 +69,6 @@ Usage(char** argv, const std::string& msg = std::string())
 int
 main(int argc, char** argv)
 {
-  std::cout<<"STrarsdn:"<<std::endl;
   bool verbose = false;
   std::string url("localhost:8001");
   tc::Headers http_headers;
@@ -175,7 +174,6 @@ main(int argc, char** argv)
   // to unique integers and the second to all ones.
   
   std::fstream is("../data/in_e.csv", std::ios_base::in);
-  std::cout<<"STrarsdn:"<<std::endl;
   std::vector<float> input0_data; //(lo*12,1.0);
   float number;
   while (is >> number)
