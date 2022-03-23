@@ -89,17 +89,19 @@ target_link_libraries(inference PUBLIC ActsPluginExaTrkXTorch)
 
 
 add_executable(inference_client inference_client.cpp)
-target_link_libraries(inference_client
- PUBLIC
-  #  ActsPluginExaTrkXTriton
-   /workspace/install/lib/libgrpcclient.so
-   /workspace/build/third-party/protobuf/lib/libprotobuf.a
- )
-target_include_directories(
-  inference_client
-  PRIVATE
-    /workspace/install/include
-)
+target_link_libraries(inference_client PUBLIC ActsPluginExaTrkXTriton)
+
+# target_link_libraries(inference_client
+#  PUBLIC
+#    ActsPluginExaTrkXTriton
+#    /workspace/install/lib/libgrpcclient.so
+#    /workspace/build/third-party/protobuf/lib/libprotobuf.a
+#  )
+# target_include_directories(
+#   inference_client
+#   PRIVATE
+#     /workspace/install/include
+# )
 # target_link_libraries(inference
 #   PUBLIC
 # #   /workspace/install/lib/libgrpcclient_static.a

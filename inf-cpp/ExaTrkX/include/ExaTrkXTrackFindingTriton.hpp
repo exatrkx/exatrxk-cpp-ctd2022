@@ -3,7 +3,13 @@
 #include <string>
 #include <vector>
 #include <memory>
+namespace triton {
+    namespace client {
+        class InferenceServerGrpcClient;
+    }
+}
 
+// class triton::client::InferenceServerGrpcClient;
 class ExaTrkXTrackFindingTriton
 {
 public:
@@ -20,7 +26,7 @@ public:
 
 
     ExaTrkXTrackFindingTriton(const Config& config);
-    virtual ~ExaTrkXTrackFindingTriton() {}
+    virtual ~ExaTrkXTrackFindingTriton();
 
     void getTracks(
         std::vector<float>& inputValues,
@@ -31,7 +37,9 @@ public:
 
 private:
     void initTrainedModels();
+    
 
 private:
     Config m_cfg;
+    triton::client::InferenceServerGrpcClient* m_embedClient;
 };

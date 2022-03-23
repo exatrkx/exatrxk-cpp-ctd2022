@@ -38,21 +38,8 @@ PUBLIC ${Python3_INCLUDE_DIRS} ${TORCH_INCLUDE_DIRS}
     $<INSTALL_INTERFACE:include>
 )
 
-# link_directories(/opt/conda/envs/rapids/lib/python3.8/site-packages/torch/lib)
-# <NOTE, As of writing, the TORCH_LIBRARIES contains comma-seperated libraries, which
-# cannot be understood by cmake>
-# And it containers "torch_library", which cmake knows nothing about.
-message(STATUS "Original Torch Libraries: ${TORCH_LIBRARIES}, and ${TORCH_LIBRARY}")
-# string(REPLACE "torch;torch_library;" "" TORCH_DEP_LIBS "${TORCH_LIBRARIES}")
-# string(REPLACE ";" " " TORCH_DEP_LIBS "${TORCH_DEP_LIBS}")
-list(LENGTH TORCH_LIBRARIES NUM_DEP_LIBS)
-list(SUBLIST TORCH_LIBRARIES 2 ${NUM_DEP_LIBS} TORCH_DEP_LIBS)
-message(STATUS "Modified Torch Libraries: |${TORCH_DEP_LIBS}|")
-
-# target_link_libraries(frnn PUBLIC ${TORCH_LIBRARY} "${TORCH_DEP_LIBS}")
 target_link_libraries(frnn PRIVATE "${TORCH_LIBRARIES}" ${Python3_LIBRARIES})
-# target_link_libraries(frnn PUBLIC ${TORCH_LIBRARY} ${TORCH_DEP_LIBS} ${Python3_LIBRARIES})
-# target_link_libraries(frnn PUBLIC torch ${Python3_LIBRARIES})
+
 
 set_property(TARGET frnn PROPERTY CXX_STANDARD 14)
 set_property(TARGET frnn PROPERTY POSITION_INDEPENDENT_CODE ON)
