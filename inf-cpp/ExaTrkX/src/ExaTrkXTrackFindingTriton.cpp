@@ -121,5 +121,16 @@ void ExaTrkXTrackFindingTriton::getTracks(
     results_ptr->RawData(
           "OUTPUT__0", (const uint8_t**)&output0_data, &output0_byte_size);
 
+    std::cout << "bit size: " << output0_byte_size << std::endl;
+    std::cout << "size of outputs: " << sizeof(output0_data) << std::endl;
+    std::cout << "entries of outputs: " << sizeof(output0_data) / output0_byte_size << std::endl;
+
+    std::vector<float> embededData;
+    for (size_t i = 0; i < numSpacepoints; ++i) {
+      for (size_t j = 0; j < m_cfg.embeddingDim; ++j) 
+        // std::cout << *(output0_data + j + i*m_cfg.embeddingDim) <<  " ";
+        embededData.push_back(*(output0_data + i*m_cfg.embeddingDim));
+    }
+    std::cout << "after embedding: " << embededData.size() << std::endl;
     trackCandidates.clear();
 }
