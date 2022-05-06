@@ -41,5 +41,5 @@ private:
 
 private:
     Config m_cfg;
-    triton::client::InferenceServerGrpcClient* m_embedClient;
+    std::unique_ptr<triton::client::InferenceServerGrpcClient> m_embedClient;
 };

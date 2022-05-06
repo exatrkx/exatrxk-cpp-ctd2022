@@ -7,6 +7,16 @@
 #include "grpc_service.pb.h"
 namespace tc = triton::client;
 
+
+#define FAIL_IF_ERR(X, MSG)                                        \
+  {                                                                \
+    tc::Error err = (X);                                          \
+    if (!err.IsOk()) {                                             \
+      std::cerr << "error: " << (MSG) << ": " << err << std::endl; \
+      exit(1);                                                     \
+    }                                                              \
+  }
+
 ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
     const ExaTrkXTrackFindingTriton::Config& config): m_cfg(config)
 {
@@ -14,7 +24,7 @@ ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
 }
 
 ExaTrkXTrackFindingTriton::~ExaTrkXTrackFindingTriton() {
-    if(m_embedClient != nullptr) delete m_embedClient;
+
 }
 
 void ExaTrkXTrackFindingTriton::initTrainedModels(){
@@ -45,10 +55,12 @@ void ExaTrkXTrackFindingTriton::initTrainedModels(){
         tc::Error err = tc::InferenceServerGrpcClient::Create(
             &embedClient, url, verbose, use_ssl, ssl_options);
     } else {
-        ;
-            // tc::InferenceServerGrpcClient::Create(&embedClient, url, verbose);
+        FAIL_IF_ERR(
+            tc::InferenceServerGrpcClient::Create(&embedClient, url, verbose),
+            "unable to create grpc client");
+         // tc::InferenceServerGrpcClient::Create(&embedClient, url, verbose);
     }
-    m_embedClient = embedClient.get();
+    m_embedClient = std::move(embedClient);
 }
 
 
@@ -66,15 +78,19 @@ void ExaTrkXTrackFindingTriton::getTracks(
 
     int64_t numSpacepoints = inputValues.size() / m_cfg.spacepointFeatures;
     std::vector<int64_t> embedInputShape{numSpacepoints, m_cfg.spacepointFeatures};
+    std::cout << "My input shape is: " << inputValues.size() << std::endl;
+    std::cout << "My embedding shape is: " << embedInputShape[0] << " " << embedInputShape[1] << std::endl;
     // Initialize the inputs with the data.
     tc::InferInput* input0;
-    // tc::InferInput::Create(&input0, "INPUT__0" , embedInputShape, "FP32");
+    FAIL_IF_ERR(
+        tc::InferInput::Create(&input0, "INPUT__0" , embedInputShape, "FP32"), 
+        "unable to get INPUT0");
 
     std::shared_ptr<tc::InferInput> input0_ptr;
     input0_ptr.reset(input0);
-    input0_ptr->AppendRaw(
+    FAIL_IF_ERR(input0_ptr->AppendRaw(
         reinterpret_cast<uint8_t*>(&inputValues[0]), // why uint8?
-        inputValues.size() * sizeof(float));
+        inputValues.size() * sizeof(float)), "unable to set data for INPUT0");
 
     tc::InferRequestedOutput* embedOutput;
     std::string model_name = "embed";
@@ -89,12 +105,14 @@ void ExaTrkXTrackFindingTriton::getTracks(
     options.client_timeout_ = client_timeout;
 
     std::vector<tc::InferInput*> inputs = {input0_ptr.get()};
+    std::cout << "Input size: " << inputs.size() << std::endl;
     std::vector<const tc::InferRequestedOutput*> outputs = {}; //output0_ptr.get()
 
     tc::InferResult* results;
-    // m_embedClient->Infer(
-    //     &results, options, inputs, outputs, http_headers,
-    //     compression_algorithm);
+    FAIL_IF_ERR(m_embedClient->Infer(
+        &results, options, inputs, outputs, http_headers,
+        compression_algorithm), "unable to run Embedding");
+
     std::shared_ptr<tc::InferResult> results_ptr;
     results_ptr.reset(results);
 
