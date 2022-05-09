@@ -34,12 +34,8 @@ public:
         std::vector<std::vector<int> >& trackCandidates);
 
     const Config& config() const { return m_cfg; }
-
-private:
-    void initTrainedModels();
     
 
 private:
     Config m_cfg;
-    std::unique_ptr<triton::client::InferenceServerGrpcClient> m_embedClient;
 };
