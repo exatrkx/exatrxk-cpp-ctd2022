@@ -59,8 +59,6 @@ void ExaTrkXTrackFindingTriton::getTracks(
     std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
     e_client_->GetOutput("OUTPUT__0", eOutputData, embedOutputShape);
 
-    // e_client_->Inference("INPUT__0", embedInputShape, inputValues, "FP32",
-    //     "OUTPUT__0", eOutputData, embedOutputShape);
 
     std::cout <<"Embedding space of the first SP: ";
     std::copy(eOutputData.begin(), eOutputData.begin() + m_cfg.embeddingDim,
