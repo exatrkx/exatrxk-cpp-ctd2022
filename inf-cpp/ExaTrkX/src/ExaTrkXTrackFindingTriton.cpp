@@ -1,5 +1,4 @@
 #include "ExaTrkXTrackFindingTriton.hpp"
-#include "ExaTrkXTriton.hpp"
 
 #include "mmio_read.h"
 #include "build_edges.hpp"
@@ -19,7 +18,7 @@ namespace tc = triton::client;
   }
 
 ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
-    const ExaTrkXTrackFindingTriton::Config& config, std::string modelName = "embed", std::string url = "localhost:8021"): 
+    const ExaTrkXTrackFindingTriton::Config& config, std::string modelName, std::string url): 
     m_cfg(config),
     triton_(modelName)
 {
@@ -52,7 +51,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
 
     float* output0_data;
     size_t output0_byte_size;
-    triton_.GetOutput("OUTPUT__0", float* output_data, size_t& output_size);
+    triton_.GetOutput("OUTPUT__0", output0_data, output0_byte_size);
 
     std::cout << "bit size: " << output0_byte_size << std::endl;
     std::cout << "size of outputs: " << sizeof(output0_data) << std::endl;

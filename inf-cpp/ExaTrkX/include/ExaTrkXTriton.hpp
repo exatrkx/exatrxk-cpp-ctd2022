@@ -27,10 +27,10 @@ class ExaTrkXTriton {
     ExaTrkXTriton(std::string modelName);
     ~ExaTrkXTriton() {};
 
-    bool initClient(std::string url, std::string modelVersion = "", uint32_t client_timeout = 0, bool verbose = false);
+    bool InitClient(std::string url, std::string modelVersion = "", uint32_t client_timeout = 0, bool verbose = false);
 
     // currently works only for 1 input; need to extend this to multiple inputs
-    bool prepareInput(std::string inputName, std::vector<int64_t> inputShape, std::vector<float>& inputValues);
+    bool PrepareInput(std::string inputName, std::vector<int64_t> inputShape, std::vector<float>& inputValues);
     bool GetOutput(std::string outputName, float* output_data, size_t& output_size);
 
 
