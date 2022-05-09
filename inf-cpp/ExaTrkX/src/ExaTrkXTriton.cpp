@@ -1,14 +1,14 @@
-#include "ExaTrkTriton.hpp"
+#include "ExaTrkXTriton.hpp"
 
 namespace tc = triton::client;
 
-ExaTrkxTriton::ExaTrkxTriton(std::string modelName)
+ExaTrkXTriton::ExaTrkXTriton(std::string modelName)
 : options_(modelName)
 {};
 
-ExaTrkxTriton::~ExaTrkxTriton() {};
+ExaTrkXTriton::~ExaTrkXTriton() {};
 
-bool ExaTrkxTriton::InitClient(std::string url, std::string modelVersion = "", uint32_t client_timeout = 0, bool verbose = false) 
+bool ExaTrkXTriton::InitClient(std::string url, std::string modelVersion = "", uint32_t client_timeout = 0, bool verbose = false) 
 {
     options_.model_version_ = model_version;
     options_.client_timeout_ = client_timeout;
@@ -24,7 +24,7 @@ bool ExaTrkxTriton::InitClient(std::string url, std::string modelVersion = "", u
     return 1
 }
 
-bool ExaTrkxTriton::PrepareInput(std::string inputName, std::vector<int64_t> inputShape, std::vector<float>& inputValues)
+bool ExaTrkXTriton::PrepareInput(std::string inputName, std::vector<int64_t> inputShape, std::vector<float>& inputValues)
 {
     tc::InferInput* input0;
     FAIL_IF_ERR(
@@ -42,7 +42,7 @@ bool ExaTrkxTriton::PrepareInput(std::string inputName, std::vector<int64_t> inp
     return 1;
 }
 
-bool ExaTrkxTriton::GetOutput(std::string outputName, float* output_data, size_t& output_size)
+bool ExaTrkXTriton::GetOutput(std::string outputName, float* output_data, size_t& output_size)
 {
     tc::InferResult* results;
     std::vector<const tc::InferRequestedOutput*> outputs = {}; //output0_ptr.get()

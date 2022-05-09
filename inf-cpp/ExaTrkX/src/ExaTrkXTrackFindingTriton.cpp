@@ -1,4 +1,5 @@
 #include "ExaTrkXTrackFindingTriton.hpp"
+#include "ExaTrkXTriton.hpp"
 
 #include "mmio_read.h"
 #include "build_edges.hpp"
@@ -30,7 +31,7 @@ ExaTrkXTrackFindingTriton::~ExaTrkXTrackFindingTriton() {
 void ExaTrkXTrackFindingTriton::initTrainedModels(){
     // start the communication with the Server?
     bool verbose = false;
-    const std::string url("localhost:8001");
+    const std::string url("localhost:8021");
     const uint32_t lo = 314;
     bool use_ssl = false;
     std::string root_certificates;

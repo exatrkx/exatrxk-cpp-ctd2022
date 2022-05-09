@@ -3,6 +3,9 @@
 #include "grpc_client.h"
 #include "grpc_service.pb.h"
 
+#include <string>
+#include <vector>
+
 namespace triton {
     namespace client {
         class InferenceServerGrpcClient;
@@ -19,20 +22,20 @@ namespace triton {
   }
 
 
-class ExaTrkxTriton {
+class ExaTrkXTriton {
   public:
-    ExaTrkxTriton(std::string modelName);
-    ~ExaTrkxTriton() {};
+    ExaTrkXTriton(std::string modelName);
+    ~ExaTrkXTriton() {};
 
     bool initClient(std::string url, std::string modelVersion = "", uint32_t client_timeout = 0, bool verbose = false);
 
     // currently works only for 1 input; need to extend this to multiple inputs
     bool prepareInput(std::string inputName, std::vector<int64_t> inputShape, std::vector<float>& inputValues);
-    bool GetOutput(std::string outputName, float* output_data, size_t& output_size)
+    bool GetOutput(std::string outputName, float* output_data, size_t& output_size);
 
 
   private:
     std::unique_ptr<triton::client::InferenceServerGrpcClient> m_Client_;
-    std::vector<triton::client::::InferInput*> inputs_;
+    std::vector<triton::client::InferInput*> inputs_;
     triton::client::InferOptions options_;
-  };
+};
