@@ -36,20 +36,26 @@ class ExaTrkXTriton {
     template <typename T>
     bool PrepareInput(
       const std::string& inputName, const std::vector<int64_t>& inputShape,
-      std::vector<T>& inputValues)
-    {
+      std::vector<T>& inputValues
+      ){
       tc::InferInput* input0;
+      std::string dataType{"FP32"};
+      if (std::is_same<T, int>::value) {
+        dataType = "INT32";
+      }
+      
       FAIL_IF_ERR(
-          tc::InferInput::Create(&input0, inputName, inputShape, "FP32"), 
+          tc::InferInput::Create(&input0, inputName, inputShape, dataType), 
           "unable to get"+inputName);
 
-      std::shared_ptr<tc::InferInput> input0_ptr;
-      input0_ptr.reset(input0);
+      std::shared_ptr<tc::InferInput> input0_ptr(input0);
+
       FAIL_IF_ERR(input0_ptr->AppendRaw(
           reinterpret_cast<uint8_t*>(&inputValues[0]), // why uint8?
           inputValues.size() * sizeof(T)), "unable to set data"+inputName);
 
-      inputs_.push_back(input0_ptr.get());
+      // inputs_.push_back(input0_ptr.get());
+      inputs_.push_back(input0_ptr);
 
       return true;
     }
@@ -60,8 +66,14 @@ class ExaTrkXTriton {
       std::vector<float>& outputData, const std::vector<int64_t>&  outputShape);
 
 
+    void Inference(const std::string& inputName, const std::vector<int64_t>& inputShape,
+      std::vector<float>& inputValues, const std::string dataType,
+      const std::string outputName, std::vector<float>& outputData,
+      const std::vector<int64_t>& outputShape
+      );
+  
   private:
     std::unique_ptr<tc::InferenceServerGrpcClient> m_Client_;
-    std::vector<tc::InferInput*> inputs_;
+    std::vector<std::shared_ptr<tc::InferInput> > inputs_;
     std::unique_ptr<tc::InferOptions> options_;
 };
