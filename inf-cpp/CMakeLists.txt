@@ -90,6 +90,12 @@ target_link_libraries(inference PUBLIC ActsPluginExaTrkXTorch)
 
 add_executable(inference_client inference_client.cpp)
 target_link_libraries(inference_client PUBLIC ActsPluginExaTrkXTriton)
+target_include_directories(
+    inference_client
+  PUBLIC
+    /workspace/install/include
+    /usr/local/cuda/include
+)
 
 # target_link_libraries(inference_client
 #  PUBLIC

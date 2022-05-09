@@ -33,5 +33,6 @@
 
 *.pyc
 
-/build
-/.vscode
+*build*
+.vscode
+*/dependences*/*

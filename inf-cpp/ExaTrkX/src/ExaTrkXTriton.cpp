@@ -29,6 +29,7 @@ bool ExaTrkXTriton::GetOutput(
     const std::string& outputName, std::vector<float>& outputData,
     const std::vector<int64_t>&  outputShape)
 {
+    std::cout << "In the inference" << std::endl;
     if (outputShape.size() != 2) {
         std::cerr << "error: output shape must be 2D" << std::endl;
     }
@@ -37,8 +38,9 @@ bool ExaTrkXTriton::GetOutput(
         grpc_compression_algorithm::GRPC_COMPRESS_NONE;
 
     tc::InferResult* results;
-    std::vector<const tc::InferRequestedOutput*> outputs = {}; //output0_ptr.get()
+    std::vector<const tc::InferRequestedOutput*> outputs = {};
 
+    std::cout << "prepare to run inference with " << inputs_.size() << " input(s)." << std::endl;
     FAIL_IF_ERR(m_Client_->Infer(
         &results, *options_, inputs_, outputs, http_headers,
         compression_algorithm), "unable to run Embedding");
@@ -46,12 +48,15 @@ bool ExaTrkXTriton::GetOutput(
     std::shared_ptr<tc::InferResult> results_ptr;
     results_ptr.reset(results);
 
+    std::cout << "after run inference" << std::endl;
     float* output_data;
     size_t output_size;
     results_ptr->RawData(
           outputName, (const uint8_t**)&output_data, &output_size);
 
+    std::cout << "before transfer data" << std::endl;
     outputData.clear();
+    std::cout << "output_size: " << sizeof(output_data) << std::endl;
     for (size_t i = 0; i < outputShape[0]; ++i) {
       for (size_t j = 0; j < outputShape[1]; ++j) 
         outputData.push_back(*(output_data + i*outputShape[1] + j));

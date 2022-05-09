@@ -52,10 +52,12 @@ void ExaTrkXTrackFindingTriton::getTracks(
     std::cout << "My embedding shape is: " << embedInputShape[0] << " " << embedInputShape[1] << std::endl;
 
     e_client_->ClearInput();
-    e_client_->PrepareInput<float>("sp_features", embedInputShape, inputValues);
+    std::cout <<"prepare inputs" << std::endl;
+    e_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
+    std::cout <<"prepare inference" << std::endl;
     std::vector<float> eOutputData;
     std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
-    e_client_->GetOutput("embedding_output", eOutputData, embedOutputShape);
+    e_client_->GetOutput("OUTPUT__0", eOutputData, embedOutputShape);
 
     std::cout <<"Embedding space of the first SP: ";
     std::copy(eOutputData.begin(), eOutputData.begin() + m_cfg.embeddingDim,
