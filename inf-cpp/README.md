@@ -7,7 +7,7 @@ The exa.trkx pipeline used for the C++ inference
 First launch an interactive docker container
 
 ```bash
-docker run -it --rm --gpus all --ipc=host \
+docker run -it --rm --gpus all --net=host \
   --ulimit memlock=-1 --ulimit stack=67108864 \
   -v $PWD:$PWD -w $PWD docexoty/exatrkx:triton-rapids bash
 ```
@@ -86,5 +86,11 @@ GNN scores for 584 edges.
 [ CPUFloatType{5} ]
 size of components: 314
 22 reconstructed tracks.
+
+```
+
+# To run Triton
+Start the triton server with Exa.TrkX models included:
+```bash
 
 ```
