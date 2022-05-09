@@ -15,7 +15,10 @@ class ExaTrkXTrackFindingTriton
 {
 public:
     struct Config{
-        std::string modelDir;
+        std::string embedModelName;
+        std::string filterModelName;
+        std::string gnnModelName;
+        std::string url;
 
         // hyperparameters in the pipeline.
         int64_t spacepointFeatures = 3;
@@ -25,7 +28,7 @@ public:
         float filterCut = 0.21;
     };
 
-    ExaTrkXTrackFindingTriton(const Config& config, std::string modelName = "embed", std::string url = "localhost:8021");
+    ExaTrkXTrackFindingTriton(const Config& config);
     ~ExaTrkXTrackFindingTriton();
 
     void getTracks(
@@ -35,8 +38,9 @@ public:
 
     const Config& config() const { return m_cfg; }
     
-
 private:
     Config m_cfg;
-    ExaTrkXTriton triton_;
+    std::unique_ptr<ExaTrkXTriton> e_client_;
+    std::unique_ptr<ExaTrkXTriton> f_client_;
+    std::unique_ptr<ExaTrkXTriton> g_client_;
 };

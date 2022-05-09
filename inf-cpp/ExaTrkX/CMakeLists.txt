@@ -52,7 +52,9 @@ target_link_libraries(
 set(CMAKE_BUILD_RPATH "")
 add_library(ActsPluginExaTrkXTriton
 SHARED
-  src/ExaTrkXTrackFindingTriton.cpp)
+  src/ExaTrkXTriton.cpp
+  src/ExaTrkXTrackFindingTriton.cpp
+)
 
 # target_link_options(
 #   ActsPluginExaTrkXTriton
