@@ -38,9 +38,11 @@ class ExaTrkXTriton {
       std::vector<T>& inputValues){
       tc::InferInput* input0;
       std::string dataType{"FP32"};
-      if (std::is_same<T, int>::value) {
+      if (std::is_same<T, int32_t>::value) {
         dataType = "INT32";
-      }
+      } else if (std::is_same<T, int64_t>::value) {
+        dataType = "INT64";
+      } else {}
 
       FAIL_IF_ERR(
           tc::InferInput::Create(&input0, inputName, inputShape, dataType), 

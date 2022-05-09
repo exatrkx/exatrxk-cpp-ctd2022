@@ -89,13 +89,13 @@ void ExaTrkXTrackFindingTriton::getTracks(
     // ************
     f_client_->ClearInput();
     /// <TODO: reuse the embedding inputs?>
-    f_client_->PrepareInput<float>("f_nodes", embedInputShape, inputValues);
+    f_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
     std::vector<int64_t> fEdgeShape{2, numEdges};
-    f_client_->PrepareInput<int64_t>("f_edges", fEdgeShape, edgeList);
+    f_client_->PrepareInput<int64_t>("INPUT__1", fEdgeShape, edgeList);
 
     std::vector<float> fOutputData;
     std::vector<int64_t> fOutputShape{numEdges, 1};
-    f_client_->GetOutput("f_edge_score", fOutputData, fOutputShape);
+    f_client_->GetOutput("OUTPUT__0", fOutputData, fOutputShape);
 
     // However, I have to convert those numbers to a score by applying sigmoid!
     // Use torch::tensor
@@ -122,13 +122,13 @@ void ExaTrkXTrackFindingTriton::getTracks(
     // ************
 
     g_client_->ClearInput();
-    g_client_->PrepareInput<float>("g_nodes", embedInputShape, inputValues);
+    g_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
     std::vector<int64_t> gEdgeShape{2, numEdgesAfterF};
-    g_client_->PrepareInput<int64_t>("g_edges", gEdgeShape, edgesAfterFiltering);
+    g_client_->PrepareInput<int64_t>("INPUT__1", gEdgeShape, edgesAfterFiltering);
 
     std::vector<float> gOutputData;
     std::vector<int64_t> gOutputShape{numEdgesAfterF, 1};
-    g_client_->GetOutput("gnn_edge_score", gOutputData, gOutputShape);
+    g_client_->GetOutput("OUTPUT__0", gOutputData, gOutputShape);
 
     torch::Tensor gOutputCTen = torch::tensor(gOutputData, {torch::kFloat32});
     gOutputCTen = gOutputCTen.sigmoid();

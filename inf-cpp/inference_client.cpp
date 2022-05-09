@@ -43,8 +43,8 @@ int main(int argc, char* argv[])
     std::cout << "Building and running a GPU inference engine for Embedding" << std::endl;
     ExaTrkXTrackFindingTriton::Config config{
         "embed",
-        "filtero",
-        "gnno", "localhost:8001",
+        "filter",
+        "gnn", "localhost:8001",
     };
     ExaTrkXTrackFindingTriton infer(config);
     
