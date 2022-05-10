@@ -40,24 +40,15 @@ target_link_libraries(
     frnn cugraph ${TORCH_LIBRARIES}
 )
 
-# install(
-#   TARGETS ActsPluginExaTrkXTorch
-#   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-# install(
-#     DIRECTORY include/
-#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #### ActsPluginExaTrkXTriton
 set(CMAKE_BUILD_RPATH "")
 add_library(ActsPluginExaTrkXTriton
 SHARED
-  src/ExaTrkXTrackFindingTriton.cpp)
+  src/ExaTrkXTriton.cpp
+  src/ExaTrkXTrackFindingTriton.cpp
+)
 
-# target_link_options(
-#   ActsPluginExaTrkXTriton
-#   PRIVATE "LINKER:--no-as-needed"
-# )
 set_target_properties(ActsPluginExaTrkXTriton
   PROPERTIES  CXX_STANDARD                        17
               CXX_STANDARD_REQUIRED               ON
@@ -81,12 +72,8 @@ target_include_directories(
     ActsPluginExaTrkXTriton
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-
 )
-# target_link_libraries(ActsPluginExaTrkXTriton
-# PRIVATE
 
-# )
 
 target_link_libraries(
   ActsPluginExaTrkXTriton
