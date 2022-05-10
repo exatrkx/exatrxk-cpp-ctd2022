@@ -25,31 +25,46 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-import frnn
 import torch
+#import scipy as sp
+import numpy as np
+
+import faiss
+import faiss.contrib.torch_utils
 # triton_python_backend_utils is available in every Triton Python model. You
 # need to use this module to create inference requests and responses. It also
 # contains some utility functions for extracting information from model_config
 # and converting Triton input/output types to numpy types.
 import triton_python_backend_utils as pb_utils
-def build_edges(spatial, r, K):
-        dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
-                                                  lengths1=None, lengths2=None, K=K, r=r, grid=None,    return_nn=False, return_sorted=True)
+def build_edges(spatial, r_max, k_max, return_indices=False):
     
-        dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
-                                                  lengths1=None, lengths2=None, K=K, r=r, grid=grid, return_nn=False, return_sorted=True)
+#   Choose which algorithm to use: FAISS for larger searches, Pytorch3D for smaller searches (K > 35)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if k_max >= 0:
+        if device == "cuda":
+            res = faiss.StandardGpuResources()
+            D, I = faiss.knn_gpu(res, spatial, spatial, k_max)
+        elif device == "cpu":
+            index = faiss.IndexFlatL2(spatial.shape[1])
+            index.add(spatial)
+            D, I = index.search(spatial, k_max)
 
-        # Remove the unneccessary batch dimension
-        idxs = idxs.squeeze()
-
-        ind = torch.Tensor.repeat(torch.arange(idxs.shape[0], device=device), (idxs.shape[1], 1), 1).T
-        positive_idxs = idxs >= 0
-        edge_list = torch.stack([ind[positive_idxs], idxs[positive_idxs]])
-
-        # Remove self-loops
-        e_spatial = edge_list[:, edge_list[0] != edge_list[1]]
+    #else:
+    #    knn_object = ops.knn_points(spatial.unsqueeze(0), spatial.unsqueeze(0), K=k_max, return_sorted=False)
+    #    I = knn_object.idx[0]
+    #    D = knn_object.dists[0]
+        
+    # Overlay the "source" hit ID onto each neighbour ID (this is necessary as the FAISS algo does some shortcuts)
+    ind = torch.Tensor.repeat(torch.arange(I.shape[0], device=device), (I.shape[1], 1), 1).T
+    edge_list = torch.stack([ind[D <= r_max**2], I[D <= r_max**2]])
     
-        return e_spatial
+    # Remove self-loops
+    edge_list = edge_list[:, edge_list[0] != edge_list[1]]
+
+    if return_indices:
+        return edge_list, D, I, ind
+    else:
+        return edge_list
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -118,14 +133,14 @@ class TritonPythonModel:
             datax = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
             #out_0, out_1 = (in_0.as_numpy() + in_0.as_numpy())
-            e_spatial = build_edges(torch.from_numpy(spatial.as_numpy()).to('cuda'), 1.6, 500)
-            
-            print('Message3')                
+            e_spatial = build_edges(torch.from_numpy(spatial.as_numpy()).to('cuda'), 1.6, 500).cpu().detach().numpy()
+            #torch.from_numpy(spatial.as_numpy()).to('cuda')
+              
             # Create output tensors. You need pb_utils.Tensor
             # objects to create pb_utils.InferenceResponse.
             out_tensor_0 = pb_utils.Tensor("OUTPUT0",
                                            e_spatial.astype(output0_dtype))
-            print('Message4')
+    
             # Create InferenceResponse. You can set an error here in case
             # there was a problem with handling this inference request.
             # Below is an example of how you can set errors in inference
@@ -136,7 +151,6 @@ class TritonPythonModel:
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0])
             responses.append(inference_response)
-            print('Message5')
 
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.

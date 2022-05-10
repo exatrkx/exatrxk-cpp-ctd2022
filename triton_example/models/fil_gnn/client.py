@@ -1,4 +1,4 @@
-# Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright 2020-2021, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -24,35 +24,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-name: "frnn"
-backend: "python"
+from tritonclient.utils import *
+import tritonclient.http as httpclient
+import sys
 
-input [
-  {
-    name: "INPUT0"
-    data_type: TYPE_FP32
-    dims: [ -1, 3 ]
-  }
-]
+import numpy as np
+from numpy import loadtxt
+model_name = "fil_gnn"
+shape = [4]
 
-input [
-  {
-    name: "INPUT1"
-    data_type: TYPE_FP32
-    dims: [ -1, 8 ]
-  }
-]
+with httpclient.InferenceServerClient("localhost:8000") as client:
+    file_i = open('data/out_be.csv','rb')
+    input0_data = loadtxt(file_i,delimiter=",").astype(np.single)
+    print(input0_data, input0_data.size/2)
+    file_o = open('data/out_fil.csv','rb')
+    input1_data = loadtxt(file_o,delimiter=" ").astype(np.single)
+    print(input1_data, len(input1_data))
+    inputs = [
+        httpclient.InferInput("INPUT0", input0_data.shape,
+                              np_to_triton_dtype(input0_data.dtype)),
+        httpclient.InferInput("INPUT1", input1_data.shape,
+                              np_to_triton_dtype(input1_data.dtype)),
+    ]
 
-output [
-  {
-    name: "OUTPUT0"
-    data_type: TYPE_FP32
-    dims: [ 2, -1 ]
-  }
-]
+    inputs[0].set_data_from_numpy(input0_data)
+    inputs[1].set_data_from_numpy(input1_data)
 
-instance_group [{ kind: KIND_GPU }]
-parameters: {
-  key: "EXECUTION_ENV_PATH",
-  value: {string_value: "/global/homes/a/alazar/triton_conda/frnn.tar.gz"}
-}
+    outputs = [
+        httpclient.InferRequestedOutput("OUTPUT0"),
+    ]
+
+    response = client.infer(model_name,
+                            inputs,
+                            request_id=str(1),
+                            outputs=outputs)
+
+    result = response.get_response()
+    output0_data = response.as_numpy("OUTPUT0")
+  
+
+
+    print('PASS: fill_gnn')
+    print(output0_data, output0_data.size/2)
+    sys.exit(0)
