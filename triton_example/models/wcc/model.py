@@ -25,37 +25,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-import frnn
-import torch
+import numba.cuda
+import pandas as pd
+import cudf, cugraph
 # triton_python_backend_utils is available in every Triton Python model. You
 # need to use this module to create inference requests and responses. It also
 # contains some utility functions for extracting information from model_config
 # and converting Triton input/output types to numpy types.
 import triton_python_backend_utils as pb_utils
-def build_edges(spatial, r, K):
-        dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
-                                                  lengths1=None, lengths2=None, K=K, r=r, grid=None,    return_nn=False, return_sorted=True)
-    
-        dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
-                                                  lengths1=None, lengths2=None, K=K, r=r, grid=grid, return_nn=False, return_sorted=True)
 
-        # Remove the unneccessary batch dimension
-        idxs = idxs.squeeze()
-
-        ind = torch.Tensor.repeat(torch.arange(idxs.shape[0], device=device), (idxs.shape[1], 1), 1).T
-        positive_idxs = idxs >= 0
-        edge_list = torch.stack([ind[positive_idxs], idxs[positive_idxs]])
-
-        # Remove self-loops
-        e_spatial = edge_list[:, edge_list[0] != edge_list[1]]
-    
-        return e_spatial
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
     that is created must have "TritonPythonModel" as the class name.
-    """    
-    
+    """
+
     def initialize(self, args):
         """`initialize` is called only once when the model is being loaded.
         Implementing `initialize` function is optional. This function allows
@@ -79,6 +63,7 @@ class TritonPythonModel:
         # Get OUTPUT0 configuration
         output0_config = pb_utils.get_output_config_by_name(
             model_config, "OUTPUT0")
+
 
         # Convert Triton types to numpy types
         self.output0_dtype = pb_utils.triton_string_to_numpy(
@@ -107,25 +92,53 @@ class TritonPythonModel:
         """
 
         output0_dtype = self.output0_dtype
- 
+
         responses = []
-        print(torch.cuda.is_available())
+
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            spatial = pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            datax = pb_utils.get_input_tensor_by_name(request, "INPUT1")
+            edge_list = pb_utils.get_input_tensor_by_name(request, "INPUT0")
+            # Get INPUT1
+            edge_score = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
-            #out_0, out_1 = (in_0.as_numpy() + in_0.as_numpy())
-            e_spatial = build_edges(torch.from_numpy(spatial.as_numpy()).to('cuda'), 1.6, 500)
-            
-            print('Message3')                
+            #out_0, out_1 = (in_0.as_numpy() + in_1.as_numpy(),
+            #                in_0.as_numpy() - in_1.as_numpy())
+            cut_edges = edge_list.as_numpy()[:,edge_score.as_numpy() > 0.75]
+            cut_df = cudf.DataFrame(cut_edges.T)
+            G = cugraph.Graph()
+
+            #df = pd.DataFrame(output.as_numpy(), columns = ['src', 'dst', 'wgt'])
+            #cut_df = cudf.DataFrame(df)
+            #cut_df = numba.cuda.to_device(output.as_numpy())
+            G.from_cudf_edgelist(cut_df,source=0, destination=1, edge_attr=None)
+            labels = cugraph.components.connectivity.weakly_connected_components(G)
+            predict_tracks_df = labels.to_pandas()
+            predict_tracks_df.columns = ["track_id","hit_id"]
+            #print(predict_tracks_df)
+
+            label_gby = predict_tracks_df.groupby("track_id")
+            label_count = label_gby.count()
+            out_0 =  predict_tracks_df.to_numpy()
+
+            print("Total number of components found : ", len(label_count))
+            #cut_edges = hids[edge_list.cpu().numpy()][:,output > graph_cut]
+            #cut_df = cudf.DataFrame(cut_edges.T)
+            #G=cugraph.Graph()
+            #G.from_cudf_edgelist(cut_df,source=0, destination=1, edge_attr=None)
+            #labels = cugraph.components.connectivity.weakly_connected_components(G)
+            #predict_tracks_df = pd.Series(labels)
+            #predict_tracks_df = predict_tracks_df.reset_index()
+            #predict_tracks_df.columns = ["hit_id","track_id",]
+            #print(labels)
             # Create output tensors. You need pb_utils.Tensor
             # objects to create pb_utils.InferenceResponse.
             out_tensor_0 = pb_utils.Tensor("OUTPUT0",
-                                           e_spatial.astype(output0_dtype))
-            print('Message4')
+                                           out_0.astype(output0_dtype))
+            #out_tensor_1 = pb_utils.Tensor("OUTPUT1",
+            #                               out_1.astype(output1_dtype))
+
             # Create InferenceResponse. You can set an error here in case
             # there was a problem with handling this inference request.
             # Below is an example of how you can set errors in inference
@@ -136,7 +149,6 @@ class TritonPythonModel:
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0])
             responses.append(inference_response)
-            print('Message5')
 
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.

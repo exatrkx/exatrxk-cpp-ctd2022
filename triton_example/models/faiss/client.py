@@ -30,7 +30,7 @@ import sys
 
 import numpy as np
 from numpy import loadtxt
-model_name = "frnn"
+model_name = "faiss"
 #shape = [4]
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
@@ -40,9 +40,6 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     input0_data = loadtxt(file_i,delimiter=" ").astype(np.single)
     file_o = open('data/out_e.csv','rb')
     input1_data = loadtxt(file_o,delimiter=",").astype(np.single)
-
-    print(input0_data.dtype)
-    print(input1_data.dtype)
 
     inputs = [
         httpclient.InferInput("INPUT0", input0_data.shape,
@@ -68,8 +65,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
  
     #print("INPUT0 ({}) + INPUT1 ({}) = OUTPUT0 ({})".format(
     #    input0_data, input1_data, output0_data))
-    print("Message6")
-    print(input0_data)
+    print(output0_data)
 
     #if not np.allclose(input0_data + input1_data, output0_data):
     #    print("add_sub example error: incorrect sum")

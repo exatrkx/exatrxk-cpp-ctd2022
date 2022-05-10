@@ -30,20 +30,16 @@ import sys
 
 import numpy as np
 from numpy import loadtxt
-model_name = "frnn"
+model_name = "wcc"
 #shape = [4]
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
-    #input0_data = np.random.rand(*shape).astype(np.float32)
-    #input1_data = np.random.rand(*shape).astype(np.float32)
-    file_i = open('data/in_e.csv','rb')
-    input0_data = loadtxt(file_i,delimiter=" ").astype(np.single)
-    file_o = open('data/out_e.csv','rb')
-    input1_data = loadtxt(file_o,delimiter=",").astype(np.single)
-
-    print(input0_data.dtype)
-    print(input1_data.dtype)
-
+    file_i = open('data/out_fil_edge.csv','rb')
+    input0_data = loadtxt(file_i,delimiter=",").astype(np.single)
+    #print(input0_data)
+    file_o = open('data/out_gnn.csv','rb')
+    input1_data = loadtxt(file_o,delimiter=" ").astype(np.single)
+    #print(input1_data)
     inputs = [
         httpclient.InferInput("INPUT0", input0_data.shape,
                               np_to_triton_dtype(input0_data.dtype)),
@@ -65,11 +61,11 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
 
     result = response.get_response()
     output0_data = response.as_numpy("OUTPUT0")
- 
+
     #print("INPUT0 ({}) + INPUT1 ({}) = OUTPUT0 ({})".format(
     #    input0_data, input1_data, output0_data))
-    print("Message6")
-    print(input0_data)
+    #print("INPUT0 ({}) - INPUT1 ({}) = OUTPUT0 ({})".format(
+    #    input0_data, input1_data, output1_data))
 
     #if not np.allclose(input0_data + input1_data, output0_data):
     #    print("add_sub example error: incorrect sum")
@@ -80,4 +76,5 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     #    sys.exit(1)
 
     #print('PASS: add_sub')
+    print(output0_data)
     sys.exit(0)
