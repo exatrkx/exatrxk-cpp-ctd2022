@@ -55,5 +55,5 @@ output [
 instance_group [{ kind: KIND_GPU }]
 parameters: {
   key: "EXECUTION_ENV_PATH",
-  value: {string_value: "/input/faiss.tar.gz"}
+  value: {string_value: "/global/homes/a/alazar/triton_conda/faiss.tar.gz"}
 }
