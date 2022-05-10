@@ -1,4 +1,5 @@
 #pragma once
+#include "ExaTrkXTriton.hpp"
 
 #include <string>
 #include <vector>
@@ -24,9 +25,8 @@ public:
         float filterCut = 0.21;
     };
 
-
-    ExaTrkXTrackFindingTriton(const Config& config);
-    virtual ~ExaTrkXTrackFindingTriton();
+    ExaTrkXTrackFindingTriton(const Config& config, std::string modelName = "embed", std::string url = "localhost:8021");
+    ~ExaTrkXTrackFindingTriton();
 
     void getTracks(
         std::vector<float>& inputValues,
@@ -34,12 +34,9 @@ public:
         std::vector<std::vector<int> >& trackCandidates);
 
     const Config& config() const { return m_cfg; }
-
-private:
-    void initTrainedModels();
     
 
 private:
     Config m_cfg;
-    std::unique_ptr<triton::client::InferenceServerGrpcClient> m_embedClient;
+    ExaTrkXTriton triton_;
 };
