@@ -86,7 +86,13 @@ find_package(TritonClient CONFIG REQUIRED COMPONENTS TritonClient::triton-client
 add_subdirectory(ExaTrkX)
 
 add_executable(inference inference.cpp)
-target_link_libraries(inference PUBLIC ActsPluginExaTrkXTorch)
+target_link_libraries(inference PUBLIC ActsPluginExaTrkXTorch ActsPluginExaTrkXTriton)
+target_include_directories(
+  inference
+  PUBLIC
+    /workspace/install/include
+    /usr/local/cuda/include
+)
 
 
 add_executable(inference_client inference_client.cpp)

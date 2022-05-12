@@ -19,7 +19,8 @@ namespace tc = triton::client;
   }
 
 ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
-    const ExaTrkXTrackFindingTriton::Config& config): m_cfg(config)
+    const ExaTrkXTrackFindingTriton::Config& config):
+    ExaTrkXTrackFindingBase("ExaTrkXTrackFindingTriton"), m_cfg(config)
 {
     bool verbose = false;
     uint32_t client_timeout = 0;
@@ -39,13 +40,16 @@ ExaTrkXTrackFindingTriton::~ExaTrkXTrackFindingTriton() {
 void ExaTrkXTrackFindingTriton::getTracks(
     std::vector<float>& inputValues,
     std::vector<int>& spacepointIDs,
-    std::vector<std::vector<int> >& trackCandidates)
-{
+    std::vector<std::vector<int> >& trackCandidates,
+    ExaTrkXTime& timeInfo) const{
 
+    ExaTrkXTimer tot_timer;
+    ExaTrkXTimer timer;
+    tot_timer.start();
     // ************
     // Embedding
     // ************
-
+    timer.start();
     int64_t numSpacepoints = inputValues.size() / m_cfg.spacepointFeatures;
     std::vector<int64_t> embedInputShape{numSpacepoints, m_cfg.spacepointFeatures};
     std::cout << "My input shape is: " << inputValues.size() << std::endl;
@@ -59,6 +63,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
     std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
     e_client_->GetOutput("OUTPUT__0", eOutputData, embedOutputShape);
 
+    timeInfo.embedding = timer.stopAndGetElapsedTime();
 
     std::cout <<"Embedding space of the first SP: ";
     std::copy(eOutputData.begin(), eOutputData.begin() + m_cfg.embeddingDim,
@@ -67,26 +72,24 @@ void ExaTrkXTrackFindingTriton::getTracks(
     // ************
     // Building Edges
     // ************
-
+    timer.start();
     std::vector<int64_t> edgeList;
     buildEdges(
       eOutputData, edgeList, 
       numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);
     int64_t numEdges = edgeList.size() / 2;
     std::cout << "Built " << numEdges<< " edges." << std::endl;
+    // std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
-
-    std::copy(edgeList.begin(), edgeList.begin() + 10,
-              std::ostream_iterator<int64_t>(std::cout, " "));
-    std::cout << std::endl;
-    std::copy(edgeList.begin()+numEdges, edgeList.begin()+numEdges+10,
-              std::ostream_iterator<int64_t>(std::cout, " "));
-    std::cout << std::endl;    
+    timeInfo.building = timer.stopAndGetElapsedTime();
 
 
     // ************
     // Filtering
     // ************
+    std::cout << "Get scores for " << numEdges<< " edges." << std::endl;
+
+    timer.start();
     f_client_->ClearInput();
     /// <TODO: reuse the embedding inputs?>
     f_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
@@ -117,9 +120,12 @@ void ExaTrkXTrackFindingTriton::getTracks(
     int64_t numEdgesAfterF = edgesAfterFiltering.size() / 2;
     std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
 
+    timeInfo.filtering = timer.stopAndGetElapsedTime();
+
     // ************
     // GNN
     // ************
+    timer.start();
 
     g_client_->ClearInput();
     g_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
@@ -133,10 +139,12 @@ void ExaTrkXTrackFindingTriton::getTracks(
     torch::Tensor gOutputCTen = torch::tensor(gOutputData, {torch::kFloat32});
     gOutputCTen = gOutputCTen.sigmoid();
 
-
+    timeInfo.gnn = timer.stopAndGetElapsedTime();
     // ************
     // Track Labeling with cugraph::connected_components
     // ************
+    timer.start();
+
     std::vector<int32_t> rowIndices;
     std::vector<int32_t> colIndices;
     std::vector<float> edgeWeights;
@@ -184,5 +192,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
             trackLableToIds[trackLabel] = trkId;
             existTrkIdx++;
         }
-    }    
+    }
+    timeInfo.labeling = timer.stopAndGetElapsedTime();
+    timeInfo.total = tot_timer.stopAndGetElapsedTime();
 }

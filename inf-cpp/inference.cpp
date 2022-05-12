@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "ExaTrkXTrackFinding.hpp"
+#include "ExaTrkXTrackFindingTriton.hpp"
 
 
 void processInput(std::string file_path, std::vector<float>& input_tensor_values){
@@ -40,10 +41,21 @@ void processInput(std::string file_path, std::vector<float>& input_tensor_values
 // enviroment maintains thread pools and other state info
 int main(int argc, char* argv[])
 {
-    
-    std::cout << "Building and running a GPU inference engine for Embedding" << std::endl;
-    ExaTrkXTrackFinding::Config config({"../datanmodels"});
-    ExaTrkXTrackFinding infer(config);
+    bool do_triton = false;
+    int opt;
+    while ((opt = getopt(argc, argv, "t")) != -1) {
+        switch (opt) {
+            case 't':
+                do_triton = true;
+                break;
+            default:
+                std::cerr << "Usage: " << argv[0] << " [-t]" << std::endl;
+                std::cerr << " -t: run on Triton" << std::endl;
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    std::cout << "Running ExaTrkX Inference." << std::endl;
     
     // read spacepoints table saved in csv
     std::string input_filepath = "../datanmodels/in_e1000.csv";
@@ -58,12 +70,23 @@ int main(int argc, char* argv[])
     for (int i=0; i < numSpacepoints; ++i){
         spacepoint_ids.push_back(i);
     }
-
     std::vector<std::vector<int> > track_candidates;
-    std::cout << "Running: " << infer.name() << std::endl;
+
+    std::unique_ptr<ExaTrkXTrackFindingBase> infer;
+    if (do_triton){
+        ExaTrkXTrackFindingTriton::Config config{
+            "embed", "filter", "gnn", "localhost:8001"};
+        infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
+    } else {
+        ExaTrkXTrackFinding::Config config({"../datanmodels"});
+        infer = std::make_unique<ExaTrkXTrackFinding>(config);
+    }
+
+    std::cout << "Running: " << infer->name() << std::endl;
     ExaTrkXTime time;
-    infer.getTracks(input_tensor_values, spacepoint_ids, track_candidates, time);
+    infer->getTracks(input_tensor_values, spacepoint_ids, track_candidates, time);
     time.summary();
+
     std::cout << track_candidates.size() << " reconstructed tracks." << std::endl;
     return 0;
 }

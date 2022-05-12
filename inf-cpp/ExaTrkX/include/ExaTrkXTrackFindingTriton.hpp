@@ -1,5 +1,6 @@
 #pragma once
 #include "ExaTrkXTriton.hpp"
+#include "ExaTrkXTrackFindingBase.hpp"
 
 #include <string>
 #include <vector>
@@ -11,7 +12,7 @@ namespace triton {
 }
 
 // class triton::client::InferenceServerGrpcClient;
-class ExaTrkXTrackFindingTriton
+class ExaTrkXTrackFindingTriton : public ExaTrkXTrackFindingBase
 {
 public:
     struct Config{
@@ -34,7 +35,8 @@ public:
     void getTracks(
         std::vector<float>& inputValues,
         std::vector<int>& spacepointIDs,
-        std::vector<std::vector<int> >& trackCandidates);
+        std::vector<std::vector<int> >& trackCandidates,
+        ExaTrkXTime& timeInfo) const final;
 
     const Config& config() const { return m_cfg; }
     

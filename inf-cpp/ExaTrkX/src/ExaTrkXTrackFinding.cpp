@@ -93,7 +93,7 @@ void ExaTrkXTrackFinding::getTracks(
         eOutput, numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);
     int64_t numEdges = edgeList.size(1);
     std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
-    std::cout << edgeList.slice(1, 0, 5) << std::endl;
+    // std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     timeInfo.building = timer.stopAndGetElapsedTime();
 
@@ -119,7 +119,6 @@ void ExaTrkXTrackFinding::getTracks(
     edgesAfterF = edgesAfterF.to(torch::kInt64);
     int64_t numEdgesAfterF = edgesAfterF.size(1);
     std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
-    std::cout << edgesAfterF.slice(1, 0, 5) << std::endl;
 
     timeInfo.filtering = timer.stopAndGetElapsedTime();
 
