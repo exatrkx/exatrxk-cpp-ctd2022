@@ -102,14 +102,14 @@ class TritonPythonModel:
             # Get INPUT1
             in_1 = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
-            #output = torch.sigmoid(torch.from_numpy(in_1.as_numpy()))
+            output = torch.sigmoid(torch.from_numpy(in_1.as_numpy()))
 
             in_0 = in_0.as_numpy()
             output = in_1.as_numpy()
 
-            print(output)
+            #print(output)
             edge_list = in_0[:, output > 0.21]    
-            print(edge_list, edge_list.size/2)     
+            #print(edge_list, edge_list.size/2)     
             out_0 = edge_list
             # Create output tensors. You need pb_utils.Tensor
             # objects to create pb_utils.InferenceResponse.
