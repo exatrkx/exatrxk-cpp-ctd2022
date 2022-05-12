@@ -1,4 +1,5 @@
 #pragma once
+#include "ExaTrkXTrackFindingBase.hpp"
 
 #include <string>
 #include <vector>
@@ -8,7 +9,7 @@
 #include <torch/script.h>
 using namespace torch::indexing;
 
-class ExaTrkXTrackFinding
+class ExaTrkXTrackFinding : public ExaTrkXTrackFindingBase
 {
 public:
     struct Config{
@@ -29,7 +30,8 @@ public:
     void getTracks(
         std::vector<float>& inputValues,
         std::vector<int>& spacepointIDs,
-        std::vector<std::vector<int> >& trackCandidates);
+        std::vector<std::vector<int> >& trackCandidates,
+        ExaTrkXTime& timeInfo) const final;
 
     const Config& config() const { return m_cfg; }
 
@@ -38,7 +40,7 @@ private:
 
 private:
     Config m_cfg;
-    torch::jit::script::Module e_model;
-    torch::jit::script::Module f_model;
-    torch::jit::script::Module g_model;
+    mutable torch::jit::script::Module e_model;
+    mutable torch::jit::script::Module f_model;
+    mutable torch::jit::script::Module g_model;
 };

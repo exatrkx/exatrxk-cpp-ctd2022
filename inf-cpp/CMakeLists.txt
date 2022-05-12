@@ -77,6 +77,7 @@ set(CMAKE_C_FLAGS "-Wno-error=format-truncation")
 find_package(Torch REQUIRED)
 find_package(cugraph REQUIRED)
 find_package(Boost REQUIRED)
+find_package(TBB REQUIRED)
 
 find_package(TritonCore CONFIG REQUIRED)
 find_package(TritonCommon CONFIG REQUIRED)

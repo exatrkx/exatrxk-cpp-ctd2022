@@ -60,7 +60,10 @@ int main(int argc, char* argv[])
     }
 
     std::vector<std::vector<int> > track_candidates;
-    infer.getTracks(input_tensor_values, spacepoint_ids, track_candidates);
+    std::cout << "Running: " << infer.name() << std::endl;
+    ExaTrkXTime time;
+    infer.getTracks(input_tensor_values, spacepoint_ids, track_candidates, time);
+    time.summary();
     std::cout << track_candidates.size() << " reconstructed tracks." << std::endl;
     return 0;
 }

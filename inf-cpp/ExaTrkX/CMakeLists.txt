@@ -2,6 +2,7 @@ add_subdirectory(libFRNN)
 
 add_library(
   ActsPluginExaTrkXTorch SHARED
+  src/ExaTrkXTrackFindingBase.cpp
   src/ExaTrkXTrackFinding.cpp)
 set_target_properties(ActsPluginExaTrkXTorch
 PROPERTIES  BUILD_RPATH    "\$ORIGIN"

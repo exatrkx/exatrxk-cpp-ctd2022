@@ -15,7 +15,8 @@ using namespace torch::indexing;
 #include "build_edges.hpp"
 
 ExaTrkXTrackFinding::ExaTrkXTrackFinding(
-    const ExaTrkXTrackFinding::Config& config): m_cfg(config)
+    const ExaTrkXTrackFinding::Config& config): 
+    ExaTrkXTrackFindingBase("ExaTrkXTrackFinding"), m_cfg(config)
 {
     initTrainedModels();
 }
@@ -43,7 +44,11 @@ void ExaTrkXTrackFinding::initTrainedModels(){
 void ExaTrkXTrackFinding::getTracks(
     std::vector<float>& inputValues,
     std::vector<int>& spacepointIDs,
-    std::vector<std::vector<int> >& trackCandidates) {
+    std::vector<std::vector<int> >& trackCandidates,
+    ExaTrkXTime& timeInfo) const {
+
+    ExaTrkXTimer tot_timer;
+    tot_timer.start();
     // hardcoded debugging information
     c10::InferenceMode guard(true);
     bool debug = true;
@@ -58,10 +63,12 @@ void ExaTrkXTrackFinding::getTracks(
               std::ostream_iterator<float>(std::cout, " "));
     std::cout << std::endl;
 
+    ExaTrkXTimer timer;
     // ************
     // Embedding
     // ************
 
+    timer.start();
     int64_t numSpacepoints = inputValues.size() / m_cfg.spacepointFeatures;
     std::vector<torch::jit::IValue> eInputTensorJit;
     auto e_opts = torch::TensorOptions().dtype(torch::kFloat32);
@@ -76,21 +83,26 @@ void ExaTrkXTrackFinding::getTracks(
     std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
     std::cout << std::endl;
 
+    timeInfo.embedding = timer.stopAndGetElapsedTime();
     
     // ************
     // Building Edges
     // ************
+    timer.start();
     torch::Tensor edgeList = buildEdges(
         eOutput, numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);
     int64_t numEdges = edgeList.size(1);
     std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
     std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
+    timeInfo.building = timer.stopAndGetElapsedTime();
+
     // ************
     // Filtering
     // ************
     std::cout << "Get scores for " << numEdges<< " edges." << std::endl;
     
+    timer.start();
     std::vector<torch::jit::IValue> fInputTensorJit;
     fInputTensorJit.push_back(eLibInputTensor.to(device));
     fInputTensorJit.push_back(edgeList.to(device));
@@ -98,6 +110,7 @@ void ExaTrkXTrackFinding::getTracks(
     std::cout << "After filtering: " << fOutput.size(0) << " " << fOutput.size(1) << std::endl;
     fOutput.squeeze_();
     fOutput.sigmoid_();
+
 
     std::cout << fOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/9) << std::endl;
 
@@ -108,10 +121,13 @@ void ExaTrkXTrackFinding::getTracks(
     std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
     std::cout << edgesAfterF.slice(1, 0, 5) << std::endl;
 
+    timeInfo.filtering = timer.stopAndGetElapsedTime();
 
     // ************
     // GNN
     // ************
+    timer.start();
+
     std::vector<torch::jit::IValue> gInputTensorJit;
     auto g_opts = torch::TensorOptions().dtype(torch::kInt64);
     gInputTensorJit.push_back(eLibInputTensor.to(device));
@@ -119,6 +135,7 @@ void ExaTrkXTrackFinding::getTracks(
     auto gOutput = g_model.forward(gInputTensorJit).toTensor();
     gOutput.sigmoid_();
 
+    timeInfo.gnn = timer.stopAndGetElapsedTime();
     // at::Tensor gOutput = fOutput.index({filterMask});
     gOutput = gOutput.cpu();
     // torch::Tensor gOutput = torch::rand({numEdgesAfterF});
@@ -128,6 +145,8 @@ void ExaTrkXTrackFinding::getTracks(
     // ************
     // Track Labeling with cugraph::connected_components
     // ************
+    timer.start();
+
     using vertex_t = int32_t;
     std::vector<vertex_t> rowIndices;
     std::vector<vertex_t> colIndices;
@@ -178,4 +197,6 @@ void ExaTrkXTrackFinding::getTracks(
             existTrkIdx++;
         }
     }
+    timeInfo.labeling = timer.stopAndGetElapsedTime();
+    timeInfo.total = tot_timer.stopAndGetElapsedTime();
 }
