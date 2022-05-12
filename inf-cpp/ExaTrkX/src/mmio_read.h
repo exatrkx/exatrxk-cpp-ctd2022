@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cugraph/partition_manager.hpp>
 #include <cugraph/utilities/error.hpp>
 

@@ -25,7 +25,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 name: "embed"
-#backend: "python"
+default_model_filename: "model.pt"
+backend: "pytorch"
 platform: "pytorch_libtorch"
 max_batch_size : 0
 input [

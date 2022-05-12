@@ -61,8 +61,9 @@ int main(int argc, char* argv[])
     std::string input_filepath = "../datanmodels/in_e1000.csv";
     std::vector<float> input_tensor_values;
     processInput(input_filepath, input_tensor_values);
+    int64_t spacepointFeatures = 3;
 
-    int numSpacepoints = input_tensor_values.size()/config.spacepointFeatures;
+    int numSpacepoints = input_tensor_values.size()/spacepointFeatures;
     std::cout << numSpacepoints << " spacepoints." << std::endl;
 
     // <TODO: add real spacepoint ids

@@ -86,69 +86,10 @@ find_package(TritonClient CONFIG REQUIRED COMPONENTS TritonClient::triton-client
 add_subdirectory(ExaTrkX)
 
 add_executable(inference inference.cpp)
-target_link_libraries(inference PUBLIC ActsPluginExaTrkXTorch ActsPluginExaTrkXTriton)
+target_link_libraries(inference PUBLIC ActsPluginExaTrkXTriton)
 target_include_directories(
   inference
   PUBLIC
     /workspace/install/include
     /usr/local/cuda/include
 )
-
-
-add_executable(inference_client inference_client.cpp)
-target_link_libraries(inference_client PUBLIC ActsPluginExaTrkXTriton)
-target_include_directories(
-    inference_client
-  PUBLIC
-    /workspace/install/include
-    /usr/local/cuda/include
-)
-
-# target_link_libraries(inference_client
-#  PUBLIC
-#    ActsPluginExaTrkXTriton
-#    /workspace/install/lib/libgrpcclient.so
-#    /workspace/build/third-party/protobuf/lib/libprotobuf.a
-#  )
-# target_include_directories(
-#   inference_client
-#   PRIVATE
-#     /workspace/install/include
-# )
-# target_link_libraries(inference
-#   PUBLIC
-# #   /workspace/install/lib/libgrpcclient_static.a
-#   # /workspace/install/lib/libgrpcclient.so
-#   # /workspace/build/third-party/protobuf/lib/libprotobuf.a
-# )
-# target_link_libraries(inference 
-#   PUBLIC
-#     frnn
-#     cugraph
-#     # ${TORCH_LIBRARIES}
-# )
-
-
-# set_target_properties(inference
-# PROPERTIES  BUILD_RPATH    "\$ORIGIN"
-#             INSTALL_RPATH  "\$ORIGIN"
-#             CXX_STANDARD                        17
-#             CXX_STANDARD_REQUIRED               ON
-#             CUDA_STANDARD                       17
-#             CUDA_STANDARD_REQUIRED              ON
-#             INTERFACE_POSITION_INDEPENDENT_CODE ON
-# )
-# target_compile_options(inference
-#     PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
-#             "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>"
-# )
-# target_compile_definitions(inference PUBLIC TRITON_ENABLE_GPU)
-# target_compile_definitions(inference PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
-# target_compile_definitions(inference PUBLIC CUDA_SEPARABLE_COMPILATION ON)
-
-# target_include_directories(
-#   inference
-#   PUBLIC
-#     /workspace/install/include
-#     /usr/local/cuda/include
-# )

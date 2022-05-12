@@ -1,8 +1,8 @@
 #include "ExaTrkXTrackFindingTriton.hpp"
-
+#include "ExaTrkXUtils.hpp"
 
 #include "mmio_read.h"
-#include "build_edges.hpp"
+
 
 #include "grpc_client.h"
 #include "grpc_service.pb.h"

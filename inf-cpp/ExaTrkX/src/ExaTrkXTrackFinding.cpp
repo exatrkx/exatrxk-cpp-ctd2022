@@ -1,4 +1,5 @@
 #include "ExaTrkXTrackFinding.hpp"
+#include "ExaTrkXUtils.hpp"
 
 #include <torch/torch.h>
 #include <torch/script.h>
@@ -12,7 +13,7 @@ using namespace torch::indexing;
 #include "cuda.h"
 #include "cuda_runtime_api.h"
 #include "mmio_read.h"
-#include "build_edges.hpp"
+
 
 ExaTrkXTrackFinding::ExaTrkXTrackFinding(
     const ExaTrkXTrackFinding::Config& config): 

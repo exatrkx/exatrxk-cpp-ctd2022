@@ -1,16 +1,4 @@
-#pragma once
-
-#include <torch/torch.h>
-#include <torch/script.h>
-using namespace torch::indexing;
-
-#include <grid.h>
-#include <insert_points.h>
-#include <counting_sort.h>
-#include <prefix_sum.h>
-#include <find_nbrs.h>
-#include "cuda.h"
-#include "cuda_runtime_api.h"
+#include "ExaTrkXUtils.hpp"
 
 torch::Tensor buildEdges(
     at::Tensor& embedFeatures, int64_t numSpacepoints,
