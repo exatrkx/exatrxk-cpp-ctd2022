@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <getopt.h>
+#include <filesystem>
 
 #include <memory>
 #include <string>
@@ -42,9 +43,13 @@ void processInput(std::string file_path, std::vector<float>& input_tensor_values
 int main(int argc, char* argv[])
 {
     bool do_triton = false;
+    std::string input_file_path = "../datanmodels/in_e1000.csv";
     int opt;
-    while ((opt = getopt(argc, argv, "t")) != -1) {
+    while ((opt = getopt(argc, argv, "td:")) != -1) {
         switch (opt) {
+            case 'd':
+                input_file_path = optarg;
+                break;
             case 't':
                 do_triton = true;
                 break;
@@ -56,22 +61,6 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "Running ExaTrkX Inference." << std::endl;
-    
-    // read spacepoints table saved in csv
-    std::string input_filepath = "../datanmodels/in_e1000.csv";
-    std::vector<float> input_tensor_values;
-    processInput(input_filepath, input_tensor_values);
-    int64_t spacepointFeatures = 3;
-
-    int numSpacepoints = input_tensor_values.size()/spacepointFeatures;
-    std::cout << numSpacepoints << " spacepoints." << std::endl;
-
-    // <TODO: add real spacepoint ids
-    std::vector<int> spacepoint_ids;
-    for (int i=0; i < numSpacepoints; ++i){
-        spacepoint_ids.push_back(i);
-    }
-    std::vector<std::vector<int> > track_candidates;
 
     std::unique_ptr<ExaTrkXTrackFindingBase> infer;
     if (do_triton){
@@ -82,6 +71,31 @@ int main(int argc, char* argv[])
         ExaTrkXTrackFinding::Config config({"../datanmodels"});
         infer = std::make_unique<ExaTrkXTrackFinding>(config);
     }
+
+    
+    const fs::path filepath(input_file_path);
+    std::error_code ec;
+    if (fs::is_directory(filepath, ec)) {
+
+    } else if (fs::is_regular_file(filepath, ec)) {
+        // read spacepoints table saved in csv
+        std::string input_filepath = "../datanmodels/in_e1000.csv";
+        std::vector<float> input_tensor_values;
+        processInput(input_filepath, input_tensor_values);
+        int64_t spacepointFeatures = 3;
+
+        int numSpacepoints = input_tensor_values.size()/spacepointFeatures;
+        std::cout << numSpacepoints << " spacepoints." << std::endl;
+
+        // <TODO: add real spacepoint ids
+        std::vector<int> spacepoint_ids;
+        for (int i=0; i < numSpacepoints; ++i){
+            spacepoint_ids.push_back(i);
+        }
+        std::vector<std::vector<int> > track_candidates;
+    } else {}
+
+
 
     std::cout << "Running: " << infer->name() << std::endl;
     ExaTrkXTime time;
