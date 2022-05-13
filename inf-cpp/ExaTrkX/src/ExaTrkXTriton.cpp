@@ -60,10 +60,22 @@ bool ExaTrkXTriton::GetOutput(
 
     std::cout << "before transfer data" << std::endl;
     outputData.clear();
-    std::cout << "output_size: " << sizeof(output_data) << std::endl;
-    for (size_t i = 0; i < outputShape[0]; ++i) {
-      for (size_t j = 0; j < outputShape[1]; ++j) 
-        outputData.push_back(*(output_data + i*outputShape[1] + j));
+    int64_t output_entries = sizeof(output_data) / sizeof(output_data[0]);
+    std::cout << "output_size: " << output_entries << std::endl;
+
+    int64_t num_rows = outputShape[0];
+    int64_t num_cols = outputShape[1];
+    if (num_rows < 0) {
+        num_rows = (int64_t) output_entries / num_cols;
+    }
+    if (num_cols < 0) {
+        num_cols = (int64_t) output_entries / num_rows;
+    }
+
+
+    for (size_t i = 0; i < num_rows; ++i) {
+      for (size_t j = 0; j < num_cols; ++j) 
+        outputData.push_back(*(output_data + i*num_cols + j));
     }
 
     return true;

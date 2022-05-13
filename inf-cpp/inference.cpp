@@ -43,18 +43,18 @@ void processInput(std::string file_path, std::vector<float>& input_tensor_values
 // enviroment maintains thread pools and other state info
 int main(int argc, char* argv[])
 {
-    bool do_triton = false;
+    int server_type = 0;
     std::string input_file_path = "../datanmodels/in_e1000.csv";
     int opt;
     bool help = false;
     bool verbose = false;
-    while ((opt = getopt(argc, argv, "vhtd:")) != -1) {
+    while ((opt = getopt(argc, argv, "vhs:d:")) != -1) {
         switch (opt) {
             case 'd':
                 input_file_path = optarg;
                 break;
-            case 't':
-                do_triton = true;
+            case 's':
+                server_type = atoi(optarg);
                 break;
             case 'v':
                 verbose = true;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
             default:
                 fprintf(stderr, "Usage: %s [-ht] [-d input_file_path]\n", argv[0]);
                 if (help) {
-                    std::cerr << " -t: run on Triton" << std::endl;
+                    std::cerr << " -s: server type. 0: no server, 1: torch, 2: python" << std::endl;
                     std::cerr << " -d: input data/directory" << std::endl;
                     std::cerr << " -v: verbose" << std::endl;
                 }
@@ -76,15 +76,24 @@ int main(int argc, char* argv[])
     std::cout << "Input file: " << input_file_path << std::endl;
 
     std::unique_ptr<ExaTrkXTrackFindingBase> infer;
-    if (do_triton){
+    if (server_type == 0){
+        ExaTrkXTrackFinding::Config config{"../datanmodels", verbose};
+        infer = std::make_unique<ExaTrkXTrackFinding>(config);
+    } else if (server_type == 1){
         ExaTrkXTrackFindingTriton::Config config{
             "embed", "filter", "gnn", "localhost:8001",
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
+    } else if (server_type == 2) {
+        ExaTrkXTrackFindingPython::Config config{
+            "../datanmodels", "faiss", "wcc", "localhost:8001",
+            verbose
+        };
+        infer = std::make_unique<ExaTrkXTrackFindingPython>(config);
     } else {
-        ExaTrkXTrackFinding::Config config{"../datanmodels", verbose};
-        infer = std::make_unique<ExaTrkXTrackFinding>(config);
+        std::cerr << "Invalid server type: " << server_type << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     

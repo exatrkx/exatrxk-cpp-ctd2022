@@ -130,7 +130,7 @@ class TritonPythonModel:
         for request in requests:
             # Get INPUT0
             spatial = pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            datax = pb_utils.get_input_tensor_by_name(request, "INPUT1")
+            # datax = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
             #out_0, out_1 = (in_0.as_numpy() + in_0.as_numpy())
             e_spatial = build_edges(torch.from_numpy(spatial.as_numpy()).to('cuda'), 1.6, 500).cpu().detach().numpy()

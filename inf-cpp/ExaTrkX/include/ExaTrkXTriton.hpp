@@ -33,7 +33,7 @@ class ExaTrkXTriton {
     ~ExaTrkXTriton() {};
 
     template <typename T>
-    bool PrepareInput(
+    bool AddInput(
       const std::string& inputName, const std::vector<int64_t>& inputShape,
       std::vector<T>& inputValues){
       tc::InferInput* input0;
@@ -57,6 +57,26 @@ class ExaTrkXTriton {
       inputs_.push_back(input0_ptr);
 
       return true;
+    }
+
+    template <typename T>
+    bool AddInput(const std::string& inputName, const at::Tensor& inputTensor){
+      std::vector<int64_t> inputShape = inputTensor.size();
+      // std::string dataType{"FP32"};
+
+      // if (inputTensor.dtype() == at::kInt32) {
+      //   dataType = "INT32";
+      // } else if (inputTensor.dtype() == at::kInt64) {
+      //   dataType = "INT64";
+      // } else {}
+      
+      std::vector<T> inputValues;
+      std::copy(
+        inputTensor.data_ptr<T>(),
+        inputTensor.data_ptr<T>() + inputTensor.numel(),
+        std::back_inserter(inputValues));
+      
+      return AddInput<T>(inputName, inputShape, inputValues);
     }
 
     void ClearInput();

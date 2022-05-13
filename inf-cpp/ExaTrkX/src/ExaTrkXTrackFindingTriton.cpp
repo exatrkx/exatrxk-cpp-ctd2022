@@ -1,7 +1,7 @@
 #include "ExaTrkXTrackFindingTriton.hpp"
 #include "ExaTrkXUtils.hpp"
 
-#include "mmio_read.h"
+// #include "mmio_read.h"
 
 
 #include "grpc_client.h"
@@ -59,7 +59,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
 
 
     e_client_->ClearInput();
-    e_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
+    e_client_->AddInput<float>("INPUT__0", embedInputShape, inputValues);
     std::vector<float> eOutputData;
     std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
     e_client_->GetOutput("OUTPUT__0", eOutputData, embedOutputShape);
@@ -93,9 +93,9 @@ void ExaTrkXTrackFindingTriton::getTracks(
     timer.start();
     f_client_->ClearInput();
     /// <TODO: reuse the embedding inputs?>
-    f_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
+    f_client_->AddInput<float>("INPUT__0", embedInputShape, inputValues);
     std::vector<int64_t> fEdgeShape{2, numEdges};
-    f_client_->PrepareInput<int64_t>("INPUT__1", fEdgeShape, edgeList);
+    f_client_->AddInput<int64_t>("INPUT__1", fEdgeShape, edgeList);
 
     std::vector<float> fOutputData;
     std::vector<int64_t> fOutputShape{numEdges, 1};
@@ -129,9 +129,9 @@ void ExaTrkXTrackFindingTriton::getTracks(
     timer.start();
 
     g_client_->ClearInput();
-    g_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
+    g_client_->AddInput<float>("INPUT__0", embedInputShape, inputValues);
     std::vector<int64_t> gEdgeShape{2, numEdgesAfterF};
-    g_client_->PrepareInput<int64_t>("INPUT__1", gEdgeShape, edgesAfterFiltering);
+    g_client_->AddInput<int64_t>("INPUT__1", gEdgeShape, edgesAfterFiltering);
 
     std::vector<float> gOutputData;
     std::vector<int64_t> gOutputShape{numEdgesAfterF, 1};
