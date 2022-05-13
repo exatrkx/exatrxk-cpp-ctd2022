@@ -40,6 +40,7 @@ def build_edges(spatial, r_max, k_max, return_indices=False):
     
 #   Choose which algorithm to use: FAISS for larger searches, Pytorch3D for smaller searches (K > 35)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print("In device: ", device)
 
     if device == "cuda":
         res = faiss.StandardGpuResources()
@@ -49,7 +50,7 @@ def build_edges(spatial, r_max, k_max, return_indices=False):
         index.add(spatial)
         D, I = index.search(spatial, k_max)
         
-    D, I = torch.Tensor(D).to(device), torch.Tensor(I).to(device)
+    # D, I = torch.Tensor(D).to(device), torch.Tensor(I).to(device)
     # Overlay the "source" hit ID onto each neighbour ID (this is necessary as the FAISS algo does some shortcuts)
     ind = torch.Tensor.repeat(torch.arange(I.shape[0], device=device), (I.shape[1], 1), 1).T
     edge_list = torch.stack([ind[D <= r_max**2], I[D <= r_max**2]])
@@ -127,7 +128,8 @@ class TritonPythonModel:
             # datax = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
             #out_0, out_1 = (in_0.as_numpy() + in_0.as_numpy())
-            e_spatial = build_edges(torch.from_numpy(spatial.as_numpy()).to('cuda'), 1.6, 500).cpu().detach().numpy()
+            e_spatial = build_edges(spatial.as_numpy(), 1.6, 500)
+            e_spatial = e_spatial.cpu().detach().numpy()
             #torch.from_numpy(spatial.as_numpy()).to('cuda')
               
             # Create output tensors. You need pb_utils.Tensor

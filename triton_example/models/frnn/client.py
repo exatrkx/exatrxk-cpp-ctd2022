@@ -37,7 +37,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     #input0_data = np.random.rand(*shape).astype(np.float32)
     #input1_data = np.random.rand(*shape).astype(np.float32)
     file_i = open('data/in_e.csv','rb')
-    input0_data = loadtxt(file_i,delimiter=" ").astype(np.single)
+    input0_data = loadtxt(file_i,delimiter=",").astype(np.single)
     file_o = open('data/out_e.csv','rb')
     input1_data = loadtxt(file_o,delimiter=",").astype(np.single)
 
