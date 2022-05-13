@@ -40,31 +40,25 @@ def build_edges(spatial, r_max, k_max, return_indices=False):
     
 #   Choose which algorithm to use: FAISS for larger searches, Pytorch3D for smaller searches (K > 35)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    if k_max >= 0:
-        if device == "cuda":
-            res = faiss.StandardGpuResources()
-            D, I = faiss.knn_gpu(res, spatial, spatial, k_max)
-        elif device == "cpu":
-            index = faiss.IndexFlatL2(spatial.shape[1])
-            index.add(spatial)
-            D, I = index.search(spatial, k_max)
 
-    #else:
-    #    knn_object = ops.knn_points(spatial.unsqueeze(0), spatial.unsqueeze(0), K=k_max, return_sorted=False)
-    #    I = knn_object.idx[0]
-    #    D = knn_object.dists[0]
+    if device == "cuda":
+        res = faiss.StandardGpuResources()
+        D, I = faiss.knn_gpu(res, spatial, spatial, k_max)
+    elif device == "cpu":
+        index = faiss.IndexFlatL2(spatial.shape[1])
+        index.add(spatial)
+        D, I = index.search(spatial, k_max)
         
+    D, I = torch.Tensor(D).to(device), torch.Tensor(I).to(device)
     # Overlay the "source" hit ID onto each neighbour ID (this is necessary as the FAISS algo does some shortcuts)
     ind = torch.Tensor.repeat(torch.arange(I.shape[0], device=device), (I.shape[1], 1), 1).T
     edge_list = torch.stack([ind[D <= r_max**2], I[D <= r_max**2]])
+    edge_list = edge_list.type(torch.long)
     
     # Remove self-loops
     edge_list = edge_list[:, edge_list[0] != edge_list[1]]
 
-    if return_indices:
-        return edge_list, D, I, ind
-    else:
-        return edge_list
+    return edge_list
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model

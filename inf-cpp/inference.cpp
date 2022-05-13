@@ -16,6 +16,7 @@
 
 #include "ExaTrkXTrackFinding.hpp"
 #include "ExaTrkXTrackFindingTriton.hpp"
+#include "ExaTrkXTrackFindingTritonPython.hpp"
 
 namespace fs = std::filesystem;
 
@@ -62,7 +63,7 @@ int main(int argc, char* argv[])
             case 'h':
                 help = true;
             default:
-                fprintf(stderr, "Usage: %s [-ht] [-d input_file_path]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-hv] [-d input_file_path] [-s server_type]\n", argv[0]);
                 if (help) {
                     std::cerr << " -s: server type. 0: no server, 1: torch, 2: python" << std::endl;
                     std::cerr << " -d: input data/directory" << std::endl;
@@ -72,7 +73,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    std::cout << "Running ExaTrkX Inference." << std::endl;
     std::cout << "Input file: " << input_file_path << std::endl;
 
     std::unique_ptr<ExaTrkXTrackFindingBase> infer;
@@ -86,16 +86,17 @@ int main(int argc, char* argv[])
         };
         infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
     } else if (server_type == 2) {
-        ExaTrkXTrackFindingPython::Config config{
+        ExaTrkXTrackFindingTritonPython::Config config{
             "../datanmodels", "faiss", "wcc", "localhost:8001",
             verbose
         };
-        infer = std::make_unique<ExaTrkXTrackFindingPython>(config);
+        infer = std::make_unique<ExaTrkXTrackFindingTritonPython>(config);
     } else {
         std::cerr << "Invalid server type: " << server_type << std::endl;
         exit(EXIT_FAILURE);
     }
 
+    std::cout << "Running Inference with " << infer->name() << std::endl;
     
     const fs::path filepath(input_file_path);
     std::error_code ec;
@@ -123,7 +124,6 @@ int main(int argc, char* argv[])
 
 
     if (fs::is_directory(filepath, ec)) {
-        std::cout << "Input file is a directory." << std::endl;
         for(auto& entry : fs::directory_iterator(filepath)) {
             if (fs::is_regular_file(entry.path())) {
                 // std::cout << "Processing file: " << entry.path().string() << std::endl;
@@ -131,7 +131,6 @@ int main(int argc, char* argv[])
             }
         }
     } else if (fs::is_regular_file(filepath, ec)) {
-        std::cout << "Input is a File." << std::endl;
         run_one_file(filepath);
     } else {
         std::cerr << "Error: " << filepath << " is not a file or directory." << std::endl;

@@ -7,6 +7,7 @@ add_library(
   src/ExaTrkXTrackFinding.cpp
   src/ExaTrkXTriton.cpp
   src/ExaTrkXTrackFindingTriton.cpp
+  src/ExaTrkXTrackFindingTritonPython.cpp
 )
 
 set_target_properties(ActsPluginExaTrkXTriton

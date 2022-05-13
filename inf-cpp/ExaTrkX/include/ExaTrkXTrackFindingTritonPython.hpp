@@ -31,7 +31,7 @@ public:
     };
 
     ExaTrkXTrackFindingTritonPython(const Config& config);
-    ~ExaTrkXTrackFindingTritonPython();
+    virtual ~ExaTrkXTrackFindingTritonPython() {}
 
     void getTracks(
         std::vector<float>& inputValues,

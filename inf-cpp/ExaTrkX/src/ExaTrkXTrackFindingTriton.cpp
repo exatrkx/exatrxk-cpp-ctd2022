@@ -9,15 +9,6 @@
 namespace tc = triton::client;
 
 
-#define FAIL_IF_ERR(X, MSG)                                        \
-  {                                                                \
-    tc::Error err = (X);                                          \
-    if (!err.IsOk()) {                                             \
-      std::cerr << "error: " << (MSG) << ": " << err << std::endl; \
-      exit(1);                                                     \
-    }                                                              \
-  }
-
 ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
     const ExaTrkXTrackFindingTriton::Config& config):
     ExaTrkXTrackFindingBase("ExaTrkXTrackFindingTriton", config.verbose), m_cfg(config)
@@ -62,7 +53,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
     e_client_->AddInput<float>("INPUT__0", embedInputShape, inputValues);
     std::vector<float> eOutputData;
     std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
-    e_client_->GetOutput("OUTPUT__0", eOutputData, embedOutputShape);
+    e_client_->GetOutput<float>("OUTPUT__0", eOutputData, embedOutputShape);
 
     timeInfo.embedding = timer.stopAndGetElapsedTime();
 
@@ -99,7 +90,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
 
     std::vector<float> fOutputData;
     std::vector<int64_t> fOutputShape{numEdges, 1};
-    f_client_->GetOutput("OUTPUT__0", fOutputData, fOutputShape);
+    f_client_->GetOutput<float>("OUTPUT__0", fOutputData, fOutputShape);
 
     // However, I have to convert those numbers to a score by applying sigmoid!
     // Use torch::tensor
@@ -135,7 +126,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
 
     std::vector<float> gOutputData;
     std::vector<int64_t> gOutputShape{numEdgesAfterF, 1};
-    g_client_->GetOutput("OUTPUT__0", gOutputData, gOutputShape);
+    g_client_->GetOutput<float>("OUTPUT__0", gOutputData, gOutputShape);
 
     torch::Tensor gOutputCTen = torch::tensor(gOutputData, {torch::kFloat32});
     gOutputCTen = gOutputCTen.sigmoid();

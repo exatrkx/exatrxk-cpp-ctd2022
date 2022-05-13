@@ -12,7 +12,7 @@ using namespace torch::indexing;
 #include <find_nbrs.h>
 #include "cuda.h"
 #include "cuda_runtime_api.h"
-#include "mmio_read.h"
+// #include "mmio_read.h"
 
 
 ExaTrkXTrackFinding::ExaTrkXTrackFinding(

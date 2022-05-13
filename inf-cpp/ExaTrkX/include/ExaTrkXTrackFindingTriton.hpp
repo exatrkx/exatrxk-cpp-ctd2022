@@ -31,7 +31,7 @@ public:
     };
 
     ExaTrkXTrackFindingTriton(const Config& config);
-    ~ExaTrkXTrackFindingTriton();
+    virtual ~ExaTrkXTrackFindingTriton();
 
     void getTracks(
         std::vector<float>& inputValues,

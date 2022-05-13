@@ -1,17 +1,10 @@
 #include "ExaTrkXTrackFindingTritonPython.hpp"
+#include "ExaTrkXUtils.hpp"
 
 #include "grpc_client.h"
 #include "grpc_service.pb.h"
 namespace tc = triton::client;
 
-#define FAIL_IF_ERR(X, MSG)                                        \
-  {                                                                \
-    tc::Error err = (X);                                          \
-    if (!err.IsOk()) {                                             \
-      std::cerr << "error: " << (MSG) << ": " << err << std::endl; \
-      exit(1);                                                     \
-    }                                                              \
-  }
 
 ExaTrkXTrackFindingTritonPython::ExaTrkXTrackFindingTritonPython(
     const ExaTrkXTrackFindingTritonPython::Config& config):
@@ -57,11 +50,11 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
     bool debug = true;
     torch::Device device(torch::kCUDA);
 
-     // printout the r,phi,z of the first spacepoint
-    // std::cout <<"First spacepoint information: ";
-    // std::copy(inputValues.begin(), inputValues.begin() + 3,
-    //           std::ostream_iterator<float>(std::cout, " "));
-    // std::cout << std::endl;
+    /// printout the r,phi,z of the first spacepoint
+    std::cout <<"First spacepoint information: ";
+    std::copy(inputValues.begin(), inputValues.begin() + 3,
+              std::ostream_iterator<float>(std::cout, " "));
+    std::cout << std::endl;
 
     ExaTrkXTimer timer;
     // ************
@@ -79,31 +72,33 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
 
     eInputTensorJit.push_back(eLibInputTensor.to(device));
     at::Tensor eOutput = e_model.forward(eInputTensorJit).toTensor();
-    // std::cout <<"Embedding space of libtorch the first SP: \n";
-    // std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
-    // std::cout << std::endl;
+    std::cout <<"Embedding space of libtorch the first SP: \n";
+    std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
+    std::cout << std::endl;
 
     timeInfo.embedding = timer.stopAndGetElapsedTime();
     
-    // ************
-    // Building Edges
-    // ************
+    /// ************
+    /// Building Edges
+    /// ************
     timer.start();
-    std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
     b_client_->ClearInput();
-    b_client_->AddInput<float>("INPUT0", embedOutputShape, eOutput);
+    eOutput = eOutput.cpu();
+    b_client_->AddInputFromTorch<float>("INPUT0", eOutput);
     std::vector<int64_t> edgeListData;
     std::vector<int64_t> edgeListShape{2, -1};
-    b_client_->GetOutput("OUTPUT0", edgeListData, edgeListShape);
+    b_client_->GetOutput<int64_t>("OUTPUT0", edgeListData, edgeListShape);
 
-    auto edgeList = torch::from_blob(edgeListData.data(), edgeListShape);
+    int64_t numEdges = edgeListData.size() / 2;
+    edgeListShape[1] = numEdges;
+    auto edgeList = torch::from_blob(edgeListData.data(), edgeListShape).to(torch::kInt64);
 
     // torch::Tensor edgeList = buildEdges(
     //     eOutput, numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);
     // int64_t numEdges = edgeList.size(1);
 
-    // std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
-    // std::cout << edgeList.slice(1, 0, 5) << std::endl;
+    std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
+    std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     timeInfo.building = timer.stopAndGetElapsedTime();
 
