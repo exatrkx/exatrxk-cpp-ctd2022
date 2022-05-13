@@ -14,12 +14,12 @@ struct ExaTrkXTime {
     float labeling = 0.0;
     float total = 0.0;
     void summary() {
-        printf("embedding:  %.4f\n", embedding);
-        printf("building:   %.4f\n", building);
-        printf("filtering:  %.4f\n", filtering);
-        printf("gnn:        %.4f\n", gnn);
-        printf("labeling:   %.4f\n", labeling);
-        printf("total:      %.4f\n", total);
+        printf("1) embedding:  %.4f\n", embedding);
+        printf("2) building:   %.4f\n", building);
+        printf("3) filtering:  %.4f\n", filtering);
+        printf("4) gnn:        %.4f\n", gnn);
+        printf("5) labeling:   %.4f\n", labeling);
+        printf("6) total:      %.4f\n", total);
     }
 };
 
