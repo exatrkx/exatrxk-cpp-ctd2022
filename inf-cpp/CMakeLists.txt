@@ -87,6 +87,10 @@ add_subdirectory(ExaTrkX)
 
 add_executable(inference inference.cpp)
 target_link_libraries(inference PUBLIC ActsPluginExaTrkXTriton)
+set_target_properties(inference
+PROPERTIES  CXX_STANDARD                        17
+            CXX_STANDARD_REQUIRED               ON
+)
 target_include_directories(
   inference
   PUBLIC

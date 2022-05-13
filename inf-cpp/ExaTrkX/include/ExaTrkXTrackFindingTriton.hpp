@@ -20,6 +20,7 @@ public:
         std::string filterModelName;
         std::string gnnModelName;
         std::string url;
+        bool verbose = false;
 
         // hyperparameters in the pipeline.
         int64_t spacepointFeatures = 3;

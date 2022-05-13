@@ -42,12 +42,20 @@ struct ExaTrkXTimeList {
 
     void summary() {
         size_t num = embedding.size();
-        float tot_embedding = std::accumulate(embedding.begin(), embedding.end(), 0.0f);
-        float tot_building = std::accumulate(building.begin(), building.end(), 0.0f);
-        float tot_filtering = std::accumulate(filtering.begin(), filtering.end(), 0.0f);
-        float tot_gnn = std::accumulate(gnn.begin(), gnn.end(), 0.0f);
-        float tot_labeling = std::accumulate(labeling.begin(), labeling.end(), 0.0f);
-        float tot_total = std::accumulate(total.begin(), total.end(), 0.0f);
+        float tot_embedding = 0;
+        float tot_building = 0;
+        float tot_filtering = 0;
+        float tot_gnn = 0;
+        float tot_labeling = 0;
+        float tot_total = 0;
+        if (num > 0){
+            tot_embedding = std::accumulate(embedding.begin(), embedding.end(), 0.0f);
+            tot_building = std::accumulate(building.begin(), building.end(), 0.0f);
+            tot_filtering = std::accumulate(filtering.begin(), filtering.end(), 0.0f);
+            tot_gnn = std::accumulate(gnn.begin(), gnn.end(), 0.0f);
+            tot_labeling = std::accumulate(labeling.begin(), labeling.end(), 0.0f);
+            tot_total = std::accumulate(total.begin(), total.end(), 0.0f);
+        }
 
         printf("1) embedding: %.4f\n", tot_embedding / num);
         printf("2) building:  %.4f\n", tot_building / num);
@@ -55,6 +63,9 @@ struct ExaTrkXTimeList {
         printf("4) gnn:       %.4f\n", tot_gnn / num);
         printf("5) labeling:  %.4f\n", tot_labeling / num);
         printf("6) total:     %.4f\n", tot_total / num);
+    }
+    int numEvts(){
+        return (int) embedding.size();
     }
 };
 

@@ -74,7 +74,6 @@ torch::Tensor buildEdges(
     torch::Tensor pc_grid_cell = torch::full({batch_size, numSpacepoints}, -1, device).to(torch::kInt32);
     torch::Tensor pc_grid_idx = torch::full({batch_size, numSpacepoints}, -1, device).to(torch::kInt32);
     
-    std::cout << "Inserting points" << std::endl;
     
     // put spacepoints into the grid
     InsertPointsCUDA(embedTensor, lengths.to(torch::kInt64), gridParamsCuda, 
@@ -83,7 +82,6 @@ torch::Tensor buildEdges(
     torch::Tensor pc_grid_off = torch::full({batch_size, G}, 0, device).to(torch::kInt32);
     torch::Tensor grid_params = gridParamsCuda.to(torch::kCPU);
     
-    std::cout << "Prefix Sum" << std::endl;
     
     for(int i = 0; i < batch_size ; i++) {
         PrefixSumCUDA(pc_grid_cnt.index({i}), grid_params.index({i, grid_total_idx}).item().to<int>(), pc_grid_off.index({i}));
@@ -96,8 +94,6 @@ torch::Tensor buildEdges(
                     pc_grid_idx, pc_grid_off,
                     sorted_points, sorted_points_idxs);
     
-    std::cout << "Counting sorted" << std::endl;
-    
     // torch::Tensor K_tensor = torch::full({batch_size}, kVal, device); 
     
     std::tuple<at::Tensor, at::Tensor> nbr_output = FindNbrsCUDA(sorted_points, sorted_points,
@@ -105,9 +101,7 @@ torch::Tensor buildEdges(
                                                             pc_grid_off.to(torch::kInt32),
                                                         sorted_points_idxs, sorted_points_idxs,
                                                             gridParamsCuda.to(torch::kFloat32),
-                                                        kVal, r_tensor, r_tensor*r_tensor);
-
-    std::cout << "Neigbours to Edges" << std::endl;                             
+                                                        kVal, r_tensor, r_tensor*r_tensor);                            
     torch::Tensor positiveIndices = std::get<0>(nbr_output) >= 0;
 
     torch::Tensor repeatRange = torch::arange(positiveIndices.size(1), device).repeat({1, positiveIndices.size(2), 1}).transpose(1,2);
@@ -221,8 +215,6 @@ void buildEdges(
   torch::Tensor pc_grid_idx =
       torch::full({batch_size, numSpacepoints}, -1, device).to(torch::kInt32);
 
-  std::cout << "Inserting points" << std::endl;
-
   // put spacepoints into the grid
   InsertPointsCUDA(embedTensor, lengths.to(torch::kInt64), gridParamsCuda,
                    pc_grid_cnt, pc_grid_cell, pc_grid_idx, G);
@@ -230,8 +222,6 @@ void buildEdges(
   torch::Tensor pc_grid_off =
       torch::full({batch_size, G}, 0, device).to(torch::kInt32);
   torch::Tensor grid_params = gridParamsCuda.to(torch::kCPU);
-
-  std::cout << "Prefix Sum" << std::endl;
 
   for (int i = 0; i < batch_size; i++) {
     PrefixSumCUDA(pc_grid_cnt.index({i}),
@@ -248,8 +238,6 @@ void buildEdges(
   CountingSortCUDA(embedTensor, lengths.to(torch::kInt64), pc_grid_cell,
                    pc_grid_idx, pc_grid_off, sorted_points, sorted_points_idxs);
 
-  std::cout << "Counting sorted" << std::endl;
-
   // torch::Tensor K_tensor = torch::full({batch_size}, kVal, device);
 
   std::tuple<at::Tensor, at::Tensor> nbr_output = FindNbrsCUDA(
@@ -258,7 +246,6 @@ void buildEdges(
       sorted_points_idxs, sorted_points_idxs,
       gridParamsCuda.to(torch::kFloat32), kVal, r_tensor, r_tensor * r_tensor);
 
-  std::cout << "Neigbours to Edges" << std::endl;
   torch::Tensor positiveIndices = std::get<0>(nbr_output) >= 0;
 
   torch::Tensor repeatRange = torch::arange(positiveIndices.size(1), device)
@@ -291,7 +278,6 @@ void buildEdges(
   // stackedEdges = torch::cat({keep_edges, flip_edges}, 1);
   stackedEdges = stackedEdges.toType(torch::kInt64).to(torch::kCPU);
 
-  std::cout << "copy edges to std::vector" << std::endl;
   std::copy(stackedEdges.data_ptr<int64_t>(),
             stackedEdges.data_ptr<int64_t>() + stackedEdges.numel(),
             std::back_inserter(edgeList));

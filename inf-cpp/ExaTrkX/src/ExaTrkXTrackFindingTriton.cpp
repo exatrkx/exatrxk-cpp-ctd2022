@@ -20,7 +20,7 @@ namespace tc = triton::client;
 
 ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
     const ExaTrkXTrackFindingTriton::Config& config):
-    ExaTrkXTrackFindingBase("ExaTrkXTrackFindingTriton"), m_cfg(config)
+    ExaTrkXTrackFindingBase("ExaTrkXTrackFindingTriton", config.verbose), m_cfg(config)
 {
     bool verbose = false;
     uint32_t client_timeout = 0;
@@ -52,22 +52,23 @@ void ExaTrkXTrackFindingTriton::getTracks(
     timer.start();
     int64_t numSpacepoints = inputValues.size() / m_cfg.spacepointFeatures;
     std::vector<int64_t> embedInputShape{numSpacepoints, m_cfg.spacepointFeatures};
-    std::cout << "My input shape is: " << inputValues.size() << std::endl;
-    std::cout << "My embedding shape is: " << embedInputShape[0] << " " << embedInputShape[1] << std::endl;
+    // if (m_verbose) {
+    //     std::cout << "My input shape is: " << inputValues.size() << std::endl;
+    //     std::cout << "My embedding shape is: " << embedInputShape[0] << " " << embedInputShape[1] << std::endl;
+    // }
+
 
     e_client_->ClearInput();
-    std::cout <<"prepare inputs" << std::endl;
     e_client_->PrepareInput<float>("INPUT__0", embedInputShape, inputValues);
-    std::cout <<"prepare inference" << std::endl;
     std::vector<float> eOutputData;
     std::vector<int64_t> embedOutputShape{numSpacepoints, m_cfg.embeddingDim};
     e_client_->GetOutput("OUTPUT__0", eOutputData, embedOutputShape);
 
     timeInfo.embedding = timer.stopAndGetElapsedTime();
 
-    std::cout <<"Embedding space of the first SP: ";
-    std::copy(eOutputData.begin(), eOutputData.begin() + m_cfg.embeddingDim,
-              std::ostream_iterator<float>(std::cout, " "));
+    // std::cout <<"Embedding space of the first SP: ";
+    // std::copy(eOutputData.begin(), eOutputData.begin() + m_cfg.embeddingDim,
+    //           std::ostream_iterator<float>(std::cout, " "));
 
     // ************
     // Building Edges
@@ -78,7 +79,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
       eOutputData, edgeList, 
       numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);
     int64_t numEdges = edgeList.size() / 2;
-    std::cout << "Built " << numEdges<< " edges." << std::endl;
+    // std::cout << "Built " << numEdges<< " edges." << std::endl;
     // std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     timeInfo.building = timer.stopAndGetElapsedTime();
@@ -87,7 +88,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
     // ************
     // Filtering
     // ************
-    std::cout << "Get scores for " << numEdges<< " edges." << std::endl;
+    // std::cout << "Get scores for " << numEdges<< " edges." << std::endl;
 
     timer.start();
     f_client_->ClearInput();
@@ -118,7 +119,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
         std::back_inserter(edgesAfterFiltering));
 
     int64_t numEdgesAfterF = edgesAfterFiltering.size() / 2;
-    std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
+    // std::cout << "After filtering: " << numEdgesAfterF << " edges." << std::endl;
 
     timeInfo.filtering = timer.stopAndGetElapsedTime();
 
@@ -162,11 +163,14 @@ void ExaTrkXTrackFindingTriton::getTracks(
         gOutputCTen.data_ptr<float>() + numEdgesAfterF,
         std::back_insert_iterator(edgeWeights));
 
-    weakly_connected_components<int32_t,int32_t,float>(
+    // weakly_connected_components<int32_t,int32_t,float>(
+    //     rowIndices, colIndices, edgeWeights, trackLabels);
+    weaklyConnectedComponents<int32_t,int32_t,float>(
+        numSpacepoints, 
         rowIndices, colIndices, edgeWeights, trackLabels);
 
     int idx = 0;
-    std::cout << "size of components: " << trackLabels.size() << std::endl;
+    // std::cout << "size of components: " << trackLabels.size() << std::endl;
     if (trackLabels.size() == 0)  return;
 
 

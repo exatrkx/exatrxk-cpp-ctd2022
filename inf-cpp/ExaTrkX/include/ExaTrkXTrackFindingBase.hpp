@@ -8,7 +8,8 @@
 class ExaTrkXTrackFindingBase
 {
 public:
-    ExaTrkXTrackFindingBase(std::string name): m_name(std::move(name)) {}
+    ExaTrkXTrackFindingBase(std::string name, bool verbose):
+        m_name(std::move(name)), m_verbose(verbose) {}
     virtual ~ExaTrkXTrackFindingBase() {}
 
     ExaTrkXTrackFindingBase() = delete;
@@ -31,4 +32,5 @@ public:
 
 protected:
     std::string m_name;
+    bool m_verbose = false;
 };

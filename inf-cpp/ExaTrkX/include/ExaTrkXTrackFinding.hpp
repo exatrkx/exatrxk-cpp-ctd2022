@@ -14,6 +14,7 @@ class ExaTrkXTrackFinding : public ExaTrkXTrackFindingBase
 public:
     struct Config{
         std::string modelDir;
+        bool verbose = false;
 
         // hyperparameters in the pipeline.
         int64_t spacepointFeatures = 3;
