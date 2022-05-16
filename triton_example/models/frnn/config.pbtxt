@@ -31,14 +31,6 @@ input [
   {
     name: "INPUT0"
     data_type: TYPE_FP32
-    dims: [ -1, 3 ]
-  }
-]
-
-input [
-  {
-    name: "INPUT1"
-    data_type: TYPE_FP32
     dims: [ -1, 8 ]
   }
 ]
@@ -46,7 +38,7 @@ input [
 output [
   {
     name: "OUTPUT0"
-    data_type: TYPE_FP32
+    data_type: TYPE_INT64
     dims: [ 2, -1 ]
   }
 ]
@@ -54,5 +46,5 @@ output [
 instance_group [{ kind: KIND_GPU }]
 parameters: {
   key: "EXECUTION_ENV_PATH",
-  value: {string_value: "/global/project/projectdirs/m3443/usr/alazar/triton_conda/frnn.tar.gz"}
+  value: {string_value: "/global/cfs/cdirs/atlas/xju/software/exatrkx-cpp/triton_example/pymodels/frnn.tar.gz"}
 }

@@ -32,6 +32,9 @@ import torch
 # contains some utility functions for extracting information from model_config
 # and converting Triton input/output types to numpy types.
 import triton_python_backend_utils as pb_utils
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 def build_edges(spatial, r, K):
         dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
                                                   lengths1=None, lengths2=None, K=K, r=r, grid=None,    return_nn=False, return_sorted=True)
@@ -115,17 +118,15 @@ class TritonPythonModel:
         for request in requests:
             # Get INPUT0
             spatial = pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            datax = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
             #out_0, out_1 = (in_0.as_numpy() + in_0.as_numpy())
             e_spatial = build_edges(torch.from_numpy(spatial.as_numpy()).to('cuda'), 1.6, 500)
-            
-            print('Message3')                
+            e_spatial = e_spatial.cpu().numpy()
+                           
             # Create output tensors. You need pb_utils.Tensor
             # objects to create pb_utils.InferenceResponse.
             out_tensor_0 = pb_utils.Tensor("OUTPUT0",
                                            e_spatial.astype(output0_dtype))
-            print('Message4')
             # Create InferenceResponse. You can set an error here in case
             # there was a problem with handling this inference request.
             # Below is an example of how you can set errors in inference
@@ -136,7 +137,6 @@ class TritonPythonModel:
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0])
             responses.append(inference_response)
-            print('Message5')
 
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
