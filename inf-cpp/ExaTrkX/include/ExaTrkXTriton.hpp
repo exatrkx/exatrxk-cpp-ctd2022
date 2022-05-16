@@ -81,7 +81,7 @@ class ExaTrkXTriton {
     bool GetOutput(const std::string& outputName,
       std::vector<T>& outputData, const std::vector<int64_t>&  outputShape)
     {
-      std::cout << "In the inference" << std::endl;
+      // std::cout << "In the inference" << std::endl;
       if (outputShape.size() != 2) {
           std::cerr << "error: output shape must be 2D" << std::endl;
       }
@@ -92,28 +92,27 @@ class ExaTrkXTriton {
       tc::InferResult* results;
       std::vector<const tc::InferRequestedOutput*> outputs = {};
 
-      std::cout << "prepare to run inference with " << inputs_.size() << " input(s)." << std::endl;
+      // std::cout << "prepare to run inference with " << inputs_.size() << " input(s)." << std::endl;
       std::vector<tc::InferInput*> inputs;
       for (auto& input : inputs_) {
           inputs.push_back(input.get());
       }
       FAIL_IF_ERR(m_Client_->Infer(
           &results, *options_, inputs, outputs, http_headers,
-          compression_algorithm), "unable to run Embedding");
+          compression_algorithm), "unable to run inference");
 
       std::shared_ptr<tc::InferResult> results_ptr;
       results_ptr.reset(results);
 
-      std::cout << "after run inference" << std::endl;
       T* output_data;
       size_t output_size;
       results_ptr->RawData(
             outputName, (const uint8_t**)&output_data, &output_size);
 
-      std::cout << "before transfer data" << std::endl;
+      // std::cout << "before transfer data: " << output_size << " " << sizeof(output_data) << std::endl;
       outputData.clear();
-      int64_t output_entries = sizeof(output_data) / sizeof(output_data[0]);
-      std::cout << "output_size: " << output_entries << std::endl;
+      int64_t output_entries = output_size / sizeof(output_data);
+      // std::cout << "output_size: " << output_entries << " " << output_data[0] << " " << output_data[1] << std::endl;
 
       int64_t num_rows = outputShape[0];
       int64_t num_cols = outputShape[1];
@@ -124,10 +123,10 @@ class ExaTrkXTriton {
           num_cols = (int64_t) output_entries / num_rows;
       }
 
-
+      // std::cout << "output_shape: " << num_rows << " " << num_cols << std::endl;
       for (size_t i = 0; i < num_rows; ++i) {
         for (size_t j = 0; j < num_cols; ++j) 
-          outputData.push_back(*(output_data + i*num_cols + j));
+          outputData.push_back(output_data[i*num_cols + j]);
       }
       return true;
     }

@@ -61,5 +61,6 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     result = response.get_response()
     output0_data = response.as_numpy("OUTPUT0")
     print(output0_data.shape, output0_data.dtype)
+    print(output0_data[:, :5])
 
     sys.exit(0)

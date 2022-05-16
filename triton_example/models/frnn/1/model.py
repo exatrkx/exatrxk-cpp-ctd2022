@@ -36,21 +36,26 @@ import triton_python_backend_utils as pb_utils
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def build_edges(spatial, r, K):
-        dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
-                                                  lengths1=None, lengths2=None, K=K, r=r, grid=None,    return_nn=False, return_sorted=True)
+        dists, idxs, nn, grid = frnn.frnn_grid_points(
+          points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
+          lengths1=None, lengths2=None, K=K, r=r, grid=None, 
+          return_nn=False, return_sorted=True)
     
-        dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
-                                                  lengths1=None, lengths2=None, K=K, r=r, grid=grid, return_nn=False, return_sorted=True)
+        # dists, idxs, nn, grid = frnn.frnn_grid_points(points1=spatial.unsqueeze(0), points2=spatial.unsqueeze(0),\
+        #                                           lengths1=None, lengths2=None, K=K, r=r, grid=grid, return_nn=False, return_sorted=True)
 
         # Remove the unneccessary batch dimension
-        idxs = idxs.squeeze()
+        idxs = idxs.squeeze().int()
 
-        ind = torch.Tensor.repeat(torch.arange(idxs.shape[0], device=device), (idxs.shape[1], 1), 1).T
+        ind = torch.Tensor.repeat(torch.arange(idxs.shape[0], device=device), (idxs.shape[1], 1), 1).T.int()
         positive_idxs = idxs >= 0
-        edge_list = torch.stack([ind[positive_idxs], idxs[positive_idxs]])
+        edge_list = torch.stack([ind[positive_idxs], idxs[positive_idxs]]).long()
 
         # Remove self-loops
         e_spatial = edge_list[:, edge_list[0] != edge_list[1]]
+
+        # remove duplicated edges
+        e_spatial = e_spatial[:, e_spatial[0, :] > e_spatial[1, :]]
     
         return e_spatial
 
@@ -112,7 +117,7 @@ class TritonPythonModel:
         output0_dtype = self.output0_dtype
  
         responses = []
-        print(torch.cuda.is_available())
+        # print(torch.cuda.is_available())
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:

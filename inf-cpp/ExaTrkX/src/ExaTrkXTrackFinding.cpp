@@ -56,10 +56,10 @@ void ExaTrkXTrackFinding::getTracks(
     torch::Device device(torch::kCUDA);
 
      // printout the r,phi,z of the first spacepoint
-    // std::cout <<"First spacepoint information: ";
-    // std::copy(inputValues.begin(), inputValues.begin() + 3,
-    //           std::ostream_iterator<float>(std::cout, " "));
-    // std::cout << std::endl;
+    std::cout <<"First spacepoint information: ";
+    std::copy(inputValues.begin(), inputValues.begin() + 3,
+              std::ostream_iterator<float>(std::cout, " "));
+    std::cout << std::endl;
 
     ExaTrkXTimer timer;
     // ************
@@ -77,9 +77,9 @@ void ExaTrkXTrackFinding::getTracks(
 
     eInputTensorJit.push_back(eLibInputTensor.to(device));
     at::Tensor eOutput = e_model.forward(eInputTensorJit).toTensor();
-    // std::cout <<"Embedding space of libtorch the first SP: \n";
-    // std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
-    // std::cout << std::endl;
+    std::cout <<"Embedding space of libtorch the first SP: \n";
+    std::cout << eOutput.slice(/*dim=*/0, /*start=*/0, /*end=*/1) << std::endl;
+    std::cout << std::endl;
 
     timeInfo.embedding = timer.stopAndGetElapsedTime();
     
@@ -91,8 +91,8 @@ void ExaTrkXTrackFinding::getTracks(
         eOutput, numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);
     int64_t numEdges = edgeList.size(1);
 
-    // std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
-    // std::cout << edgeList.slice(1, 0, 5) << std::endl;
+    std::cout << "Built " << edgeList.size(1) << " edges. " <<  edgeList.size(0) << std::endl;
+    std::cout << edgeList.slice(1, 0, 5) << std::endl;
 
     timeInfo.building = timer.stopAndGetElapsedTime();
 

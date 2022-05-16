@@ -91,7 +91,8 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
 
     int64_t numEdges = edgeListData.size() / 2;
     edgeListShape[1] = numEdges;
-    auto edgeList = torch::from_blob(edgeListData.data(), edgeListShape).to(torch::kInt64);
+    auto edges_opts = torch::TensorOptions().dtype(torch::kInt64);
+    auto edgeList = torch::from_blob(edgeListData.data(), edgeListShape, edges_opts);
 
     // torch::Tensor edgeList = buildEdges(
     //     eOutput, numSpacepoints, m_cfg.embeddingDim, m_cfg.rVal, m_cfg.knnVal);

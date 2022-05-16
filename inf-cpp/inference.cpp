@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
         infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
     } else if (server_type == 2) {
         ExaTrkXTrackFindingTritonPython::Config config{
-            "../datanmodels", "faiss", "wcc", "localhost:8001",
+            "../datanmodels", "frnn", "wcc", "localhost:8001",
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTritonPython>(config);
