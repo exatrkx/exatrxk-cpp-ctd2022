@@ -65,7 +65,7 @@ class ExaTrkXTriton {
 
     template <typename T>
     bool AddInputFromTorch(const std::string& inputName, const at::Tensor& inputTensor){
-      std::vector<int64_t> inputShape{inputTensor.size(0), inputTensor.size(1)};      
+      std::vector<int64_t> inputShape{inputTensor.sizes().vec()};  
       std::vector<T> inputValues;
       std::copy(
         inputTensor.data_ptr<T>(),

@@ -35,11 +35,11 @@ model_name = "wcc"
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     file_i = open('data/out_fil_edge.csv','rb')
-    input0_data = loadtxt(file_i,delimiter=",").astype(np.single)
-    #print(input0_data)
+    input0_data = loadtxt(file_i,delimiter=",").astype(np.int64)
+    print(input0_data.shape)
     file_o = open('data/out_gnn.csv','rb')
-    input1_data = loadtxt(file_o,delimiter=" ").astype(np.single)
-    #print(input1_data)
+    input1_data = loadtxt(file_o,delimiter=" ").astype(np.float32)
+    print(input1_data.shape)
     inputs = [
         httpclient.InferInput("INPUT0", input0_data.shape,
                               np_to_triton_dtype(input0_data.dtype)),
@@ -76,5 +76,5 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     #    sys.exit(1)
 
     #print('PASS: add_sub')
-    print(output0_data)
+    print(output0_data.shape)
     sys.exit(0)

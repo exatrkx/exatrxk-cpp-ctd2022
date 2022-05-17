@@ -30,7 +30,7 @@ backend: "python"
 input [
   {
     name: "INPUT0"
-    data_type: TYPE_FP32
+    data_type: TYPE_INT64
     dims: [ 2, -1 ]
   }
 ]
@@ -44,12 +44,12 @@ input [
 output [
   {
     name: "OUTPUT0"
-    data_type: TYPE_FP32
-    dims: [ -1, 2 ]
+    data_type: TYPE_INT64
+    dims: [ -1 ]
   }
 ]
 
-instance_group [{ kind: KIND_CPU }]
+instance_group [{ kind: KIND_GPU }]
 parameters: {
   key: "EXECUTION_ENV_PATH",
   value: {string_value: "/global/project/projectdirs/m3443/usr/alazar/triton_conda/rapids.tar.gz"}

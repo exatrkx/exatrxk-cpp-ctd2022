@@ -47,9 +47,11 @@ typedef
 > Graph; 
 
 Graph g(numNodes);
+float edge_cut = 0.75;
 for(size_t idx=0; idx < rowIndices.size(); ++idx) {
-    boost::add_edge(
-    rowIndices[idx], colIndices[idx], edgeWeights[idx], g);
+    if (edgeWeights[idx] > edge_cut) {
+        boost::add_edge(rowIndices[idx], colIndices[idx], edgeWeights[idx], g);
+    }
 }
 size_t num_components = boost::connected_components(g, &trackLabels[0]);
 

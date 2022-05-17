@@ -135,8 +135,8 @@ void ExaTrkXTrackFinding::getTracks(
     gOutput = gOutput.cpu();
     timeInfo.gnn = timer.stopAndGetElapsedTime();
 
-    // std::cout << "GNN scores for " << gOutput.size(0) << " edges." << std::endl;
-    // std::cout << gOutput.slice(0, 0, 5) << std::endl;
+    std::cout << "GNN scores for " << gOutput.size(0) << " edges." << std::endl;
+    std::cout << gOutput.slice(0, 0, 5) << std::endl;
     // ************
     // Track Labeling with cugraph::connected_components
     // ************
@@ -167,7 +167,6 @@ void ExaTrkXTrackFinding::getTracks(
     // weakly_connected_components<int32_t,int32_t,float>(
     //     rowIndices, colIndices, edgeWeights, trackLabels);
 
-    int idx = 0;
     // std::cout << "size of components: " << trackLabels.size() << std::endl;
     if (trackLabels.size() == 0)  return;
 

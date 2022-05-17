@@ -101,37 +101,24 @@ class TritonPythonModel:
             # Get INPUT0
             edge_list = pb_utils.get_input_tensor_by_name(request, "INPUT0")
             # Get INPUT1
-            edge_score = pb_utils.get_input_tensor_by_name(request, "INPUT1")
+            edge_score = pb_utils.get_input_tensor_by_name(request, "INPUT1").as_numpy()
 
-            #out_0, out_1 = (in_0.as_numpy() + in_1.as_numpy(),
-            #                in_0.as_numpy() - in_1.as_numpy())
-            cut_edges = edge_list.as_numpy()[:,edge_score.as_numpy() > 0.75]
+            cut_edges = edge_list.as_numpy()[:,edge_score > 0.75]
+            # cut_edges = edge_list.as_numpy()
             cut_df = cudf.DataFrame(cut_edges.T)
+            cut_df = cut_df.assign(score=edge_score[edge_score > 0.75])
             G = cugraph.Graph()
 
             #df = pd.DataFrame(output.as_numpy(), columns = ['src', 'dst', 'wgt'])
             #cut_df = cudf.DataFrame(df)
             #cut_df = numba.cuda.to_device(output.as_numpy())
-            G.from_cudf_edgelist(cut_df,source=0, destination=1, edge_attr=None)
+            G.from_cudf_edgelist(cut_df,source=0, destination=1, edge_attr='score', renumber=True)
             labels = cugraph.components.connectivity.weakly_connected_components(G)
             predict_tracks_df = labels.to_pandas()
             predict_tracks_df.columns = ["track_id","hit_id"]
-            #print(predict_tracks_df)
 
-            label_gby = predict_tracks_df.groupby("track_id")
-            label_count = label_gby.count()
-            out_0 =  predict_tracks_df.to_numpy()
+            out_0 =  predict_tracks_df.to_numpy()[:, 0]
 
-            print("Total number of components found : ", len(label_count))
-            #cut_edges = hids[edge_list.cpu().numpy()][:,output > graph_cut]
-            #cut_df = cudf.DataFrame(cut_edges.T)
-            #G=cugraph.Graph()
-            #G.from_cudf_edgelist(cut_df,source=0, destination=1, edge_attr=None)
-            #labels = cugraph.components.connectivity.weakly_connected_components(G)
-            #predict_tracks_df = pd.Series(labels)
-            #predict_tracks_df = predict_tracks_df.reset_index()
-            #predict_tracks_df.columns = ["hit_id","track_id",]
-            #print(labels)
             # Create output tensors. You need pb_utils.Tensor
             # objects to create pb_utils.InferenceResponse.
             out_tensor_0 = pb_utils.Tensor("OUTPUT0",
