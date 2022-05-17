@@ -40,6 +40,17 @@ void processInput(std::string file_path, std::vector<float>& input_tensor_values
     f.close();
 }
 
+void dumpTrackCandidate(const std::vector<std::vector<int> >& trackCandidates) {
+    int idx = 0;
+    for (const auto& track_candidate : trackCandidates) {
+        std::cout << "Track candidate: " << idx++ << "--> ";
+        for (const auto& id : track_candidate) {
+            std::cout << id << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 // initialize  enviroment...one enviroment per process
 // enviroment maintains thread pools and other state info
 int main(int argc, char* argv[])
@@ -120,6 +131,8 @@ int main(int argc, char* argv[])
         infer->getTracks(input_tensor_values, spacepoint_ids, track_candidates, time);
         tot_time.add(time);
         tot_tracks += track_candidates.size();
+
+        // dumpTrackCandidate(track_candidates);
     };
 
 
