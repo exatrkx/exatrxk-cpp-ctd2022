@@ -17,6 +17,7 @@
 #include "ExaTrkXTrackFinding.hpp"
 #include "ExaTrkXTrackFindingTriton.hpp"
 #include "ExaTrkXTrackFindingTritonPython.hpp"
+#include "ExaTrkXTrackFindingTritonOne.hpp"
 
 namespace fs = std::filesystem;
 
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
             default:
                 fprintf(stderr, "Usage: %s [-hv] [-d input_file_path] [-s server_type]\n", argv[0]);
                 if (help) {
-                    std::cerr << " -s: server type. 0: no server, 1: torch, 2: python" << std::endl;
+                    std::cerr << " -s: server type. 0: no server, 1: torch, 2: python, 3: all" << std::endl;
                     std::cerr << " -d: input data/directory" << std::endl;
                     std::cerr << " -v: verbose" << std::endl;
                 }
@@ -97,11 +98,19 @@ int main(int argc, char* argv[])
         };
         infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
     } else if (server_type == 2) {
+        // wcc is not used.
         ExaTrkXTrackFindingTritonPython::Config config{
             "../datanmodels", "frnn", "wcc", "localhost:8001",
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTritonPython>(config);
+    } else if (server_type == 3) {
+        // wcc is not used.
+        ExaTrkXTrackFindingTritonOne::Config config{
+            "embed", "frnn", "filter", "gnn", "wcc", "localhost:8001",
+            verbose
+        };
+        infer = std::make_unique<ExaTrkXTrackFindingTritonOne>(config);
     } else {
         std::cerr << "Invalid server type: " << server_type << std::endl;
         exit(EXIT_FAILURE);

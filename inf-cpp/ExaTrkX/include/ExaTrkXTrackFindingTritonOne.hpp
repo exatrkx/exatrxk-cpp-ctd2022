@@ -2,16 +2,20 @@
 #include "ExaTrkXTriton.hpp"
 #include "ExaTrkXTrackFindingBase.hpp"
 
+
 #include <string>
 #include <vector>
 #include <memory>
 
-class ExaTrkXTrackFindingTritonPython : public ExaTrkXTrackFindingBase
+class ExaTrkXTrackFindingTritonOne : public ExaTrkXTrackFindingBase
 {
 public:
     struct Config{
-        std::string modelDir;
+        std::string embedModelName;
         std::string buildingModelName;
+        std::string filterModelName;
+        std::string gnnModelName;
+
         std::string labelingModelName;
         std::string url;
         bool verbose = false;
@@ -24,8 +28,8 @@ public:
         float filterCut = 0.21;
     };
 
-    ExaTrkXTrackFindingTritonPython(const Config& config);
-    virtual ~ExaTrkXTrackFindingTritonPython() {}
+    ExaTrkXTrackFindingTritonOne(const Config& config);
+    virtual ~ExaTrkXTrackFindingTritonOne() {}
 
     void getTracks(
         std::vector<float>& inputValues,
@@ -37,9 +41,9 @@ public:
     
 private:
     Config m_cfg;
+    std::unique_ptr<ExaTrkXTriton> e_client_; // embedding
+    std::unique_ptr<ExaTrkXTriton> f_client_; // filtering
+    std::unique_ptr<ExaTrkXTriton> g_client_; // gnn
     std::unique_ptr<ExaTrkXTriton> b_client_; // building
     std::unique_ptr<ExaTrkXTriton> l_client_; // labeling
-    mutable torch::jit::script::Module e_model;
-    mutable torch::jit::script::Module f_model;
-    mutable torch::jit::script::Module g_model;
 };
