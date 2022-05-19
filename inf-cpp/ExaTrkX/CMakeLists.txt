@@ -22,8 +22,8 @@ PROPERTIES  BUILD_RPATH    "\$ORIGIN"
             CUDA_SEPARABLE_COMPILATION          ON
 )
 target_compile_options(ActsPluginExaTrkXTriton
-    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CUGRAPH_CXX_FLAGS}>"
-            "$<$<COMPILE_LANGUAGE:CUDA>:${CUGRAPH_CUDA_FLAGS}>")
+    PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${EXATRKX_CXX_FLAGS}>"
+            "$<$<COMPILE_LANGUAGE:CUDA>:${EXATRKX_CUDA_FLAGS}>")
 target_compile_definitions(ActsPluginExaTrkXTriton PUBLIC CUDA_API_PER_THREAD_DEFAULT_STREAM)
 target_compile_definitions(ActsPluginExaTrkXTriton PUBLIC TRITON_ENABLE_GPU)
 target_include_directories(
@@ -48,7 +48,7 @@ target_link_libraries(
 target_link_libraries(
   ActsPluginExaTrkXTriton
   PRIVATE
-    frnn cugraph 
+    frnn  
     /workspace/install/lib/libgrpcclient.so
     /workspace/build/third-party/protobuf/lib/libprotobuf.a
 )

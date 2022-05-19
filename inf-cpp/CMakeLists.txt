@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.20.1)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 project(Exatrkx_Inference VERSION 0.2.0 LANGUAGES C CXX CUDA)
-message(STATUS "CUGRAPH_TESTS: CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 
 
 if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND
@@ -16,53 +15,37 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
 endif()
 
 
-# Remove the following archs from CMAKE_CUDA_ARCHITECTURES that
-# cuhornet currently doesn't support
-#
-# >= 86
 set(supported_archs "60" "62" "70" "72" "75" "80")
-foreach( arch IN LISTS CMAKE_CUDA_ARCHITECTURES)
-    string(REPLACE "-real" "" arch ${arch})
-    if( arch IN_LIST supported_archs )
-        list(APPEND usable_arch_values ${arch})
-    endif()
-endforeach()
-# Make sure everything but the 'newest' arch
-# is marked as `-real` so we only generate PTX for
-# arch > 80
-list(POP_BACK usable_arch_values latest_arch)
-list(TRANSFORM usable_arch_values APPEND "-real")
-list(APPEND usable_arch_values ${latest_arch})
-set(CMAKE_CUDA_ARCHITECTURES ${usable_arch_values})
+set(CMAKE_CUDA_ARCHITECTURES "70;75;80;86")
 
 
 option(CUDA_STATIC_RUNTIME "Use CUDA static runtime" OFF)
 option(CMAKE_CUDA_LINEINFO "Enable the -lineinfo option for nvcc (useful for cuda-memcheck / profiler" OFF)
 
-set(CUGRAPH_CXX_FLAGS "")
-set(CUGRAPH_CUDA_FLAGS "")
+set(EXATRKX_CXX_FLAGS "")
+set(EXATRKX_CUDA_FLAGS "")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    list(APPEND CUGRAPH_CXX_FLAGS -Werror -Wno-error=deprecated-declarations)
+    list(APPEND EXATRKX_CXX_FLAGS -Werror -Wno-error=deprecated-declarations)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 
 message("-- Building for GPU_ARCHS = ${CMAKE_CUDA_ARCHITECTURES}")
 
-list(APPEND CUGRAPH_CUDA_FLAGS --expt-extended-lambda --expt-relaxed-constexpr)
-list(APPEND CUGRAPH_CUDA_FLAGS -Xcompiler=-Wall,-Wno-error=sign-compare,-Wno-error=unused-but-set-variable)
-list(APPEND CUGRAPH_CUDA_FLAGS -Xfatbin=-compress-all)
+list(APPEND EXATRKX_CUDA_FLAGS --expt-extended-lambda --expt-relaxed-constexpr)
+list(APPEND EXATRKX_CUDA_FLAGS -Xcompiler=-Wall,-Wno-error=sign-compare,-Wno-error=unused-but-set-variable)
+list(APPEND EXATRKX_CUDA_FLAGS -Xfatbin=-compress-all)
 
 # Option to enable line info in CUDA device compilation to allow introspection when profiling /
 # memchecking
 if (CMAKE_CUDA_LINEINFO)
-    list(APPEND CUGRAPH_CUDA_FLAGS -lineinfo)
+    list(APPEND EXATRKX_CUDA_FLAGS -lineinfo)
 endif(CMAKE_CUDA_LINEINFO)
 
 # Debug options
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     message(STATUS "Building with debugging flags")
-    list(APPEND CUGRAPH_CUDA_FLAGS -G -Xcompiler=-rdynamic)
+    list(APPEND EXATRKX_CUDA_FLAGS -G -Xcompiler=-rdynamic)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 
@@ -75,7 +58,6 @@ set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_C_FLAGS "-Wno-error=format-truncation") 
 
 find_package(Torch REQUIRED)
-find_package(cugraph REQUIRED)
 find_package(Boost REQUIRED)
 find_package(TBB REQUIRED)
 

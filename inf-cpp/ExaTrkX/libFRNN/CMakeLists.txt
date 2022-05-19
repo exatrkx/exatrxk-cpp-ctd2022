@@ -13,18 +13,13 @@ list(APPEND FRNN_CUDA_FLAGS -Werror=cross-execution-space-call -Wno-deprecated-d
 list(APPEND FRNN_CUDA_FLAGS -Xcompiler=-Wall,-Wno-error=sign-compare,-Wno-error=unused-but-set-variable)
 list(APPEND FRNN_CUDA_FLAGS -Xfatbin=-compress-all)
 if (CMAKE_CUDA_LINEINFO)
-    list(APPEND CUGRAPH_CUDA_FLAGS -lineinfo)
+    list(APPEND FRNN_CUDA_FLAGS -lineinfo)
 endif(CMAKE_CUDA_LINEINFO)
 # Debug options
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     message(STATUS "Building with debugging flags")
     list(APPEND FRNN_CUDA_FLAGS -G -Xcompiler=-rdynamic)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
-
-
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES )
-    set(CMAKE_CUDA_ARCHITECTURES 70 80)
-endif()
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
@@ -45,6 +40,7 @@ set_property(TARGET frnn PROPERTY CXX_STANDARD 14)
 set_property(TARGET frnn PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET frnn PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET frnn PROPERTY CUDA_STANDARD 14)
+set_target_properties(frnn PROPERTIES CUDA_ARCHITECTURES "70;75;80;86")
 
 target_compile_options(frnn
     PUBLIC  "$<$<COMPILE_LANGUAGE:CXX>:${FRNN_CXX_FLAGS}>"
