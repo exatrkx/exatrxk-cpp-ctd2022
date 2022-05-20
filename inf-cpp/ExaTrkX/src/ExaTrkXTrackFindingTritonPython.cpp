@@ -176,6 +176,7 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
     // std::cout << "size of components: " << trackLabels.size() << std::endl;
     ///***********************************************************
     
+    // The following two hard copy are needed in order to produce sensible results!
     edgesAfterF = edgesAfterF.cpu();
     std::vector<int64_t> gEdgeShape{2, numEdgesAfterF};
     std::vector<int64_t> gOutputShape{numEdgesAfterF};
@@ -201,7 +202,6 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
     l_client_->GetOutput<int64_t>("OUTPUT0", trackLabels, trackLabelsShape);
     ///***********************************************************
     if (trackLabels.size() == 0)  return;
-
 
     trackCandidates.clear();
 
