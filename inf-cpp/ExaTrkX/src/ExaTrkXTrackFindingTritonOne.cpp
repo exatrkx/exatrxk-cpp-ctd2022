@@ -138,6 +138,16 @@ void ExaTrkXTrackFindingTritonOne::getTracks(
     // ************
     timer.start();
 
+
+
+    // l_client_->ClearInput();
+    // l_client_->AddInput<int64_t>("NUMNODES", {1}, {numSpacepoints});
+    // l_client_->AddInput<int64_t>("INPUT0", gEdgeShape, edgesAfterFiltering);
+    // l_client_->AddInputFromTorch<float>("INPUT1", gOutput);
+    // std::vector<int64_t> trackLabels;
+    // std::vector<int64_t> trackLabelsShape{-1, 1};
+    // l_client_->GetOutput<int64_t>("OUTPUT0", trackLabels, trackLabelsShape);
+
     ///*** replace the following block with python-backend.
     using vertex_t = int32_t;
     std::vector<vertex_t> rowIndices;

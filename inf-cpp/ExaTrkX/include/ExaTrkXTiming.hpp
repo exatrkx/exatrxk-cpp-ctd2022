@@ -41,6 +41,10 @@ struct ExaTrkXTimeList {
     }
 
     ExaTrkXTime get(int evtid) {
+        if (evtid >= embedding.size()) {
+            printf("Error: event id %d is out of range.\n", evtid);
+            return ExaTrkXTime();
+        }
         ExaTrkXTime timing {
             embedding[evtid],
             building[evtid],
@@ -55,7 +59,7 @@ struct ExaTrkXTimeList {
     void summary(int start=0) {
         size_t num = embedding.size();
         if (num <= start) {
-            printf("Not enough data. %ld total and %d requested\n", num, start);
+            printf("Not enough data. %ld total and %d skipped\n", num, start);
             return;
         }
         num -= start;

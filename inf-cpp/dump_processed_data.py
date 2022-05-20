@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+scales = np.array([1000, np.pi, 1000])
 def dump(indir, outdir, num_evts):
     """take events from the indir and dump csv to the outdir"""
     nfiles = os.listdir(indir)
@@ -13,7 +14,7 @@ def dump(indir, outdir, num_evts):
     for idx in range(num_evts):
         file = os.path.join(indir, nfiles[idx])
         data = torch.load(file)
-        df = pd.DataFrame(data.x.numpy())
+        df = pd.DataFrame(data.x.numpy() / scales)
         outname = "evt_{}.csv".format(idx)
         df.to_csv(os.path.join(outdir, outname), header=False, index=False)
 

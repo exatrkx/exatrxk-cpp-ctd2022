@@ -150,40 +150,56 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
     timer.start();
 
     ///*** replace the following block with python-backend.
-    using vertex_t = int32_t;
-    std::vector<vertex_t> rowIndices;
-    std::vector<vertex_t> colIndices;
-    std::vector<float> edgeWeights;
-    std::vector<vertex_t> trackLabels(numSpacepoints);
-    std::copy(
-        edgesAfterF.data_ptr<int64_t>(),
-        edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
-        std::back_insert_iterator(rowIndices));
-    std::copy(
-        edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
-        edgesAfterF.data_ptr<int64_t>() + numEdgesAfterF+numEdgesAfterF,
-        std::back_insert_iterator(colIndices));
-    std::copy(
-        gOutput.data_ptr<float>(),
-        gOutput.data_ptr<float>() + numEdgesAfterF,
-        std::back_insert_iterator(edgeWeights));
+    // using vertex_t = int32_t;
+    // std::vector<vertex_t> rowIndices;
+    // std::vector<vertex_t> colIndices;
+    // std::vector<float> edgeWeights;
+    // std::vector<vertex_t> trackLabels(numSpacepoints);
+    // std::copy(
+    //     edgesAfterF.data_ptr<int64_t>(),
+    //     edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
+    //     std::back_insert_iterator(rowIndices));
+    // std::copy(
+    //     edgesAfterF.data_ptr<int64_t>()+numEdgesAfterF,
+    //     edgesAfterF.data_ptr<int64_t>() + numEdgesAfterF+numEdgesAfterF,
+    //     std::back_insert_iterator(colIndices));
+    // std::copy(
+    //     gOutput.data_ptr<float>(),
+    //     gOutput.data_ptr<float>() + numEdgesAfterF,
+    //     std::back_insert_iterator(edgeWeights));
 
-    weaklyConnectedComponents<int32_t,int32_t,float>(
-        numSpacepoints, 
-        rowIndices, colIndices, edgeWeights, trackLabels);
+    // weaklyConnectedComponents<int32_t,int32_t,float>(
+    //     numSpacepoints, 
+    //     rowIndices, colIndices, edgeWeights, trackLabels);
     ///**********************
 
     // std::cout << "size of components: " << trackLabels.size() << std::endl;
-    /***********************************************************
-    l_client_->ClearInput();
+    ///***********************************************************
+    
     edgesAfterF = edgesAfterF.cpu();
-    l_client_->AddInput<int64_t>("NUMNODES", {1}, {numSpacepoints});
-    l_client_->AddInputFromTorch<int64_t>("INPUT0", edgesAfterF);
-    l_client_->AddInputFromTorch<float>("INPUT1", gOutput);
+    std::vector<int64_t> gEdgeShape{2, numEdgesAfterF};
+    std::vector<int64_t> gOutputShape{numEdgesAfterF};
+    std::vector<int64_t> edgesAfterFiltering;
+    std::copy(
+        edgesAfterF.data_ptr<int64_t>(),
+        edgesAfterF.data_ptr<int64_t>() + edgesAfterF.numel(),
+        std::back_inserter(edgesAfterFiltering));
+
+    std::vector<float> gOutputData;
+    std::copy(
+        gOutput.data_ptr<float>(),
+        gOutput.data_ptr<float>() + gOutput.numel(),
+        std::back_inserter(gOutputData));
+
+    l_client_->ClearInput();
+    std::vector<int64_t> numSpacepointsV{numSpacepoints};
+    l_client_->AddInput<int64_t>("NUMNODES", {1}, numSpacepointsV);
+    l_client_->AddInput<int64_t>("INPUT0", gEdgeShape, edgesAfterFiltering);
+    l_client_->AddInput<float>("INPUT1", gOutputShape, gOutputData);
     std::vector<int64_t> trackLabels;
     std::vector<int64_t> trackLabelsShape{-1, 1};
     l_client_->GetOutput<int64_t>("OUTPUT0", trackLabels, trackLabelsShape);
-    ***********************************************************/
+    ///***********************************************************
     if (trackLabels.size() == 0)  return;
 
 

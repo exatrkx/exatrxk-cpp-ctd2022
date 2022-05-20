@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
         infer->getTracks(input_tensor_values, spacepoint_ids, track_candidates, time);
         tot_time.add(time);
         tot_tracks += track_candidates.size();
+
         // dumpTrackCandidate(track_candidates);
     };
 
