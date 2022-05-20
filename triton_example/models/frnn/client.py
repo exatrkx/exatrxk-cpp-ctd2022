@@ -25,7 +25,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tritonclient.utils import *
-import tritonclient.http as httpclient
+import tritonclient.grpc as grpcclient
 import sys
 
 import numpy as np
@@ -33,7 +33,7 @@ from numpy import loadtxt
 model_name = "frnn"
 #shape = [4]
 
-with httpclient.InferenceServerClient("localhost:8000") as client:
+with grpcclient.InferenceServerClient("localhost:8001") as client:
     #input0_data = np.random.rand(*shape).astype(np.float32)
     #input1_data = np.random.rand(*shape).astype(np.float32)
 
@@ -43,14 +43,14 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     print(input0_data.dtype)
 
     inputs = [
-        httpclient.InferInput("INPUT0", input0_data.shape,
+        grpcclient.InferInput("INPUT0", input0_data.shape,
                               np_to_triton_dtype(input0_data.dtype))
     ]
 
     inputs[0].set_data_from_numpy(input0_data)
 
     outputs = [
-        httpclient.InferRequestedOutput("OUTPUT0"),
+        grpcclient.InferRequestedOutput("OUTPUT0"),
     ]
 
     response = client.infer(model_name,
