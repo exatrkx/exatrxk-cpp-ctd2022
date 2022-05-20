@@ -40,8 +40,25 @@ struct ExaTrkXTimeList {
         total.push_back(time.total);
     }
 
-    void summary() {
+    ExaTrkXTime get(int evtid) {
+        ExaTrkXTime timing {
+            embedding[evtid],
+            building[evtid],
+            filtering[evtid],
+            gnn[evtid],
+            labeling[evtid],
+            total[evtid]
+        };
+        return timing;
+    }
+
+    void summary(int start=0) {
         size_t num = embedding.size();
+        if (num <= start) {
+            printf("Not enough data. %ld total and %d requested\n", num, start);
+            return;
+        }
+        num -= start;
         float tot_embedding = 0;
         float tot_building = 0;
         float tot_filtering = 0;
@@ -49,12 +66,12 @@ struct ExaTrkXTimeList {
         float tot_labeling = 0;
         float tot_total = 0;
         if (num > 0){
-            tot_embedding = std::accumulate(embedding.begin(), embedding.end(), 0.0f);
-            tot_building = std::accumulate(building.begin(), building.end(), 0.0f);
-            tot_filtering = std::accumulate(filtering.begin(), filtering.end(), 0.0f);
-            tot_gnn = std::accumulate(gnn.begin(), gnn.end(), 0.0f);
-            tot_labeling = std::accumulate(labeling.begin(), labeling.end(), 0.0f);
-            tot_total = std::accumulate(total.begin(), total.end(), 0.0f);
+            tot_embedding = std::accumulate(embedding.begin()+start, embedding.end(), 0.0f);
+            tot_building = std::accumulate(building.begin()+start, building.end(), 0.0f);
+            tot_filtering = std::accumulate(filtering.begin()+start, filtering.end(), 0.0f);
+            tot_gnn = std::accumulate(gnn.begin()+start, gnn.end(), 0.0f);
+            tot_labeling = std::accumulate(labeling.begin()+start, labeling.end(), 0.0f);
+            tot_total = std::accumulate(total.begin()+start, total.end(), 0.0f);
         }
 
         printf("1) embedding: %.4f\n", tot_embedding / num);
@@ -64,6 +81,11 @@ struct ExaTrkXTimeList {
         printf("5) labeling:  %.4f\n", tot_labeling / num);
         printf("6) total:     %.4f\n", tot_total / num);
     }
+
+    void summaryOneEvent(int evtid){
+        get(evtid).summary();
+    }
+    
     int numEvts(){
         return (int) embedding.size();
     }

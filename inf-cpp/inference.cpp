@@ -122,6 +122,7 @@ int main(int argc, char* argv[])
     std::error_code ec;
     ExaTrkXTimeList tot_time;
     int tot_tracks = 0;
+    int ievt = 0;
 
     auto run_one_file = [&](const fs::path& in_file_name) -> void {
         // read spacepoints table saved in csv
@@ -140,7 +141,6 @@ int main(int argc, char* argv[])
         infer->getTracks(input_tensor_values, spacepoint_ids, track_candidates, time);
         tot_time.add(time);
         tot_tracks += track_candidates.size();
-
         // dumpTrackCandidate(track_candidates);
     };
 
@@ -160,5 +160,11 @@ int main(int argc, char* argv[])
     }
     printf("Total %d tracks in %d events.\n", tot_tracks, tot_time.numEvts());
     tot_time.summary();
+    printf("-----------------------------------------------------\n");
+    printf("Summary of the first event\n");
+    tot_time.summaryOneEvent(0);
+    printf("-----------------------------------------------------\n");
+    printf("Summary of without first event\n");
+    tot_time.summary(1);
     return 0;
 }
