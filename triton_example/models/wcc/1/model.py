@@ -102,13 +102,16 @@ class TritonPythonModel:
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            edge_list = pb_utils.get_input_tensor_by_name(request, "INPUT0")
+            edge_list = pb_utils.get_input_tensor_by_name(request, "INPUT0").as_numpy()
             # Get INPUT1
-            edge_score = pb_utils.get_input_tensor_by_name(request, "INPUT1").as_numpy()
-            num_nodes = pb_utils.get_input_tensor_by_name(
-              request, "NUMNODES").as_numpy().astype(np.int64)
+            edge_score = pb_utils.get_input_tensor_by_name(request, "INPUT1").as_numpy().squeeze()
+            edge_score = 1/(1 + np.exp(-edge_score))
 
-            cut_edges = edge_list.as_numpy()[:,edge_score > 0.75]
+            # num_nodes = pb_utils.get_input_tensor_by_name(
+            #   request, "NUMNODES").as_numpy().astype(np.int64)
+            num_nodes = np.max(edge_list)
+
+            cut_edges = edge_list[:,edge_score > 0.75]
             if cut_edges.shape[1] > 0:
                 cut_df = cudf.DataFrame(cut_edges.T)
                 G = cugraph.Graph()

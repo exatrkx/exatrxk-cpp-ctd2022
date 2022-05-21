@@ -194,7 +194,7 @@ void ExaTrkXTrackFindingTritonPython::getTracks(
 
     l_client_->ClearInput();
     std::vector<int64_t> numSpacepointsV{numSpacepoints};
-    l_client_->AddInput<int64_t>("NUMNODES", {1}, numSpacepointsV);
+    // l_client_->AddInput<int64_t>("NUMNODES", {1}, numSpacepointsV);
     l_client_->AddInput<int64_t>("INPUT0", gEdgeShape, edgesAfterFiltering);
     l_client_->AddInput<float>("INPUT1", gOutputShape, gOutputData);
     std::vector<int64_t> trackLabels;

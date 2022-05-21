@@ -26,13 +26,6 @@
 
 name: "wcc"
 backend: "python"
-input [
-  {
-    name: "NUMNODES"
-    data_type: TYPE_INT64
-    dims: [ 1 ]
-  }
-]
 
 input [
   {
