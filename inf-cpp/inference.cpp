@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     if (fs::is_directory(filepath, ec)) {
         if (nthreads > 1) {
             // concurrent execution of all files in directory
-            std::vector<std::string>    ;
+            std::vector<std::string>  filenames;
             for (auto& entry : fs::directory_iterator(filepath)) {
                 if (fs::is_regular_file(entry.path())) {
                     filenames.push_back(entry.path().string());
