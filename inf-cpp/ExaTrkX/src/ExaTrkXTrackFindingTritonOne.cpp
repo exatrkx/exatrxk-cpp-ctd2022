@@ -16,10 +16,9 @@ ExaTrkXTrackFindingTritonOne::ExaTrkXTrackFindingTritonOne(
     std::string model_version = "";
 
     e_client_ = std::make_unique<ExaTrkXTriton>(m_cfg.embedModelName, m_cfg.url, model_version, client_timeout, verbose);
+    b_client_ = std::make_unique<ExaTrkXTriton>(m_cfg.buildingModelName, m_cfg.url, model_version, client_timeout, verbose);
     f_client_ = std::make_unique<ExaTrkXTriton>(m_cfg.filterModelName, m_cfg.url, model_version, client_timeout, verbose);
     g_client_ = std::make_unique<ExaTrkXTriton>(m_cfg.gnnModelName, m_cfg.url, model_version, client_timeout, verbose);
-
-    b_client_ = std::make_unique<ExaTrkXTriton>(m_cfg.buildingModelName, m_cfg.url, model_version, client_timeout, verbose);
     l_client_ = std::make_unique<ExaTrkXTriton>(m_cfg.labelingModelName, m_cfg.url, model_version, client_timeout, verbose);
 }
 

@@ -16,8 +16,7 @@ ExaTrkXTrackFindingTriton::ExaTrkXTrackFindingTriton(
     bool verbose = false;
     uint32_t client_timeout = 0;
     std::string model_version = "";
-    m_client = std::make_unique<ExaTrkXTriton>(
-        m_cfg.modelName, m_cfg.url, model_version, client_timeout, verbose);
+    m_client = std::make_unique<ExaTrkXTriton>(m_cfg.modelName, m_cfg.url, model_version, client_timeout, verbose);
 }
 
 
@@ -48,7 +47,7 @@ void ExaTrkXTrackFindingTriton::getTracks(
     m_client->AddInput<float>("FEATURES", embedInputShape, inputValues);
     std::vector<int64_t> trackLabels;
     std::vector<int64_t> trackLabelsShape{numSpacepoints, 1};
-    e_client_->GetOutput<int64_t>("LABELS", trackLabels, trackLabelsShape);
+    m_client->GetOutput<int64_t>("LABELS", trackLabels, trackLabelsShape);
 
     timeInfo.embedding = timer.stopAndGetElapsedTime();
 
