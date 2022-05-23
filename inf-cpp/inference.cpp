@@ -5,6 +5,9 @@
 #include <getopt.h>
 #include <filesystem>
 
+#include "tbb/parallel_for_each.h"
+#include "tbb/task_scheduler_init.h"
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -61,7 +64,8 @@ int main(int argc, char* argv[])
     int opt;
     bool help = false;
     bool verbose = false;
-    while ((opt = getopt(argc, argv, "vhs:d:")) != -1) {
+    int nthreads = 1;
+    while ((opt = getopt(argc, argv, "vht:s:d:")) != -1) {
         switch (opt) {
             case 'd':
                 input_file_path = optarg;
@@ -72,6 +76,9 @@ int main(int argc, char* argv[])
             case 'v':
                 verbose = true;
                 break;
+            case 't':
+                nthreads = atoi(optarg);
+                break;
             case 'h':
                 help = true;
             default:
@@ -79,11 +86,15 @@ int main(int argc, char* argv[])
                 if (help) {
                     std::cerr << " -s: server type. 0: no server, 1: torch, 2: python, 3: all" << std::endl;
                     std::cerr << " -d: input data/directory" << std::endl;
+                    std::cerr << " -t: number of threads" << std::endl;
                     std::cerr << " -v: verbose" << std::endl;
                 }
             exit(EXIT_FAILURE);
         }
     }
+
+    // start tbb scheduler
+    tbb::task_scheduler_init init(nthreads);
 
     std::cout << "Input file: " << input_file_path << std::endl;
 
@@ -147,12 +158,33 @@ int main(int argc, char* argv[])
 
 
     if (fs::is_directory(filepath, ec)) {
-        for(auto& entry : fs::directory_iterator(filepath)) {
-            if (fs::is_regular_file(entry.path())) {
-                // std::cout << "Processing file: " << entry.path().string() << std::endl;
-                run_one_file(entry.path().string());
+        if (nthreads > 1) {
+            // concurrent execution of all files in directory
+            std::vector<std::string>    ;
+            for (auto& entry : fs::directory_iterator(filepath)) {
+                if (fs::is_regular_file(entry.path())) {
+                    filenames.push_back(entry.path().string());
+                }
+            }
+            int nfiles = std::distance(filenames.begin(), filenames.end());
+            std::cout << "Running " << nfiles << " files in " << nthreads << " threads." << std::endl;
+
+            tbb::parallel_for_each(
+                filenames.begin(), filenames.end(),
+                [&](const std::string& fname) {
+                    run_one_file(fname);
+                });  // end parallel_for_each            
+
+        } else {
+            // sequential execution of all files in directory
+            for(auto& entry : fs::directory_iterator(filepath)) {
+                if (fs::is_regular_file(entry.path())) {
+                    // std::cout << "Processing file: " << entry.path().string() << std::endl;
+                    run_one_file(entry.path().string());
+                }
             }
         }
+
     } else if (fs::is_regular_file(filepath, ec)) {
         run_one_file(filepath);
     } else {

@@ -68,7 +68,7 @@ find_package(TritonClient CONFIG REQUIRED COMPONENTS TritonClient::triton-client
 add_subdirectory(ExaTrkX)
 
 add_executable(inference inference.cpp)
-target_link_libraries(inference PUBLIC ActsPluginExaTrkXTriton)
+target_link_libraries(inference PUBLIC ActsPluginExaTrkXTriton tbb)
 set_target_properties(inference
 PROPERTIES  CXX_STANDARD                        17
             CXX_STANDARD_REQUIRED               ON
