@@ -19,6 +19,7 @@
 
 #include "ExaTrkXTrackFinding.hpp"
 #include "ExaTrkXTrackFindingTriton.hpp"
+#include "ExaTrkXTrackFindingTritonTorch.hpp"
 #include "ExaTrkXTrackFindingTritonPython.hpp"
 #include "ExaTrkXTrackFindingTritonOne.hpp"
 
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
             default:
                 fprintf(stderr, "Usage: %s [-hv] [-d input_file_path] [-s server_type]\n", argv[0]);
                 if (help) {
-                    std::cerr << " -s: server type. 0: no server, 1: torch, 2: python, 3: all" << std::endl;
+                    std::cerr << " -s: server type. 0: no server, 1: torch, 2: python, 3: one, 4: combined" << std::endl;
                     std::cerr << " -d: input data/directory" << std::endl;
                     std::cerr << " -t: number of threads" << std::endl;
                     std::cerr << " -v: verbose" << std::endl;
@@ -103,11 +104,11 @@ int main(int argc, char* argv[])
         ExaTrkXTrackFinding::Config config{"../datanmodels", verbose};
         infer = std::make_unique<ExaTrkXTrackFinding>(config);
     } else if (server_type == 1){
-        ExaTrkXTrackFindingTriton::Config config{
+        ExaTrkXTrackFindingTritonTorch::Config config{
             "embed", "filter", "gnn", "localhost:8001",
             verbose
         };
-        infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
+        infer = std::make_unique<ExaTrkXTrackFindingTritonTorch>(config);
     } else if (server_type == 2) {
         // wcc is not used.
         ExaTrkXTrackFindingTritonPython::Config config{
@@ -122,6 +123,11 @@ int main(int argc, char* argv[])
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTritonOne>(config);
+    } else if (server_type == 4) {
+        ExaTrkXTrackFindingTriton::Config config{
+            "exatrkx", "localhost:8001", verbose
+        };
+        infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
     } else {
         std::cerr << "Invalid server type: " << server_type << std::endl;
         exit(EXIT_FAILURE);

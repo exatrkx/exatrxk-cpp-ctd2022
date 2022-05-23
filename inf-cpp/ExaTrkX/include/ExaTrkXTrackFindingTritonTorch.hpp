@@ -6,11 +6,13 @@
 #include <vector>
 #include <memory>
 
-class ExaTrkXTrackFindingTriton : public ExaTrkXTrackFindingBase
+class ExaTrkXTrackFindingTritonTorch : public ExaTrkXTrackFindingBase
 {
 public:
     struct Config{
-        std::string modelName;
+        std::string embedModelName;
+        std::string filterModelName;
+        std::string gnnModelName;
         std::string url;
         bool verbose = false;
 
@@ -22,8 +24,8 @@ public:
         float filterCut = 0.21;
     };
 
-    ExaTrkXTrackFindingTriton(const Config& config);
-    virtual ~ExaTrkXTrackFindingTriton() {}
+    ExaTrkXTrackFindingTritonTorch(const Config& config);
+    virtual ~ExaTrkXTrackFindingTritonTorch() {}
 
     void getTracks(
         std::vector<float>& inputValues,
@@ -35,5 +37,7 @@ public:
     
 private:
     Config m_cfg;
-    std::unique_ptr<ExaTrkXTriton> m_client;
+    std::unique_ptr<ExaTrkXTriton> e_client_;
+    std::unique_ptr<ExaTrkXTriton> f_client_;
+    std::unique_ptr<ExaTrkXTriton> g_client_;
 };

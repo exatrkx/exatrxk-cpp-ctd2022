@@ -11,7 +11,7 @@ class ExaTrkXTrackFindingTritonOne : public ExaTrkXTrackFindingBase
 {
 public:
     struct Config{
-        std::string embedModelName;
+        std::string modelName;
         std::string buildingModelName;
         std::string filterModelName;
         std::string gnnModelName;
