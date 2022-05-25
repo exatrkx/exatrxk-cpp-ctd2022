@@ -203,7 +203,9 @@ int main(int argc, char* argv[])
     printf("Summary of the first event\n");
     tot_time.summaryOneEvent(0);
     printf("-----------------------------------------------------\n");
-    printf("Summary of without first event\n");
+    printf("Summary of without first 1 event\n");
     tot_time.summary(1);
+    printf("Summary of the last event\n");
+    tot_time.summaryOneEvent(tot_time.numEvts()-1);
     return 0;
 }
