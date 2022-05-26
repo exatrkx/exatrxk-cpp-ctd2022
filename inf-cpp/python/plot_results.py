@@ -87,7 +87,7 @@ for istep,step in enumerate(steps):
             range=(0, upper),
             histtype='step', density=True, lw=2)
 
-    plt.xlabel("{} time per event [s]".format(step))
+    plt.xlabel("{} time [s]".format(step))
     plt.ylabel("Events")
     plt.legend()
     plt.savefig(os.path.join(outdir, "time_onethread_{}.png".format(step)),
