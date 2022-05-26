@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
     bool help = false;
     bool verbose = false;
     int nthreads = 1;
-    while ((opt = getopt(argc, argv, "vht:s:d:")) != -1) {
+    std::string url("localhost:8001");
+    while ((opt = getopt(argc, argv, "vht:s:d:u:")) != -1) {
         switch (opt) {
             case 'd':
                 input_file_path = optarg;
@@ -80,6 +81,9 @@ int main(int argc, char* argv[])
             case 't':
                 nthreads = atoi(optarg);
                 break;
+            case 'u':
+                url = optarg;
+                break;
             case 'h':
                 help = true;
             default:
@@ -88,6 +92,7 @@ int main(int argc, char* argv[])
                     std::cerr << " -s: server type. 0: no server, 1: torch, 2: python, 3: one, 4: combined" << std::endl;
                     std::cerr << " -d: input data/directory" << std::endl;
                     std::cerr << " -t: number of threads" << std::endl;
+                    std::cerr << " -u: url of server" << std::endl;
                     std::cerr << " -v: verbose" << std::endl;
                 }
             exit(EXIT_FAILURE);
@@ -98,6 +103,7 @@ int main(int argc, char* argv[])
     tbb::task_scheduler_init init(nthreads);
 
     std::cout << "Input file: " << input_file_path << std::endl;
+    
 
     std::unique_ptr<ExaTrkXTrackFindingBase> infer;
     if (server_type == 0){
@@ -105,27 +111,27 @@ int main(int argc, char* argv[])
         infer = std::make_unique<ExaTrkXTrackFinding>(config);
     } else if (server_type == 1){
         ExaTrkXTrackFindingTritonTorch::Config config{
-            "embed", "filter", "gnn", "localhost:8001",
+            "embed", "filter", "gnn", url,
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTritonTorch>(config);
     } else if (server_type == 2) {
         // wcc is not used.
         ExaTrkXTrackFindingTritonPython::Config config{
-            "../datanmodels", "frnn", "wcc", "localhost:8001",
+            "../datanmodels", "frnn", "wcc", url,
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTritonPython>(config);
     } else if (server_type == 3) {
         // wcc is not used.
         ExaTrkXTrackFindingTritonOne::Config config{
-            "embed", "frnn", "filter", "gnn", "wcc", "localhost:8001",
+            "embed", "frnn", "filter", "gnn", "wcc", url,
             verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTritonOne>(config);
     } else if (server_type == 4) {
         ExaTrkXTrackFindingTriton::Config config{
-            "exatrkx", "localhost:8001", verbose
+            "exatrkx", url, verbose
         };
         infer = std::make_unique<ExaTrkXTrackFindingTriton>(config);
     } else {
