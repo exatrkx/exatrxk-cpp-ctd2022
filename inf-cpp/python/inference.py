@@ -2,10 +2,6 @@ import os
 from typing import Any
 import time
 
-import numpy as np
-import faiss
-import torch
-
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
@@ -83,8 +79,20 @@ if __name__ == '__main__':
     add_arg = parser.add_argument
     add_arg('-d', '--data', help='input data', default='../datanmodels/in_e1000.csv')
     add_arg('-m', '--model', help='model directory', default='../datanmodels')
+    add_arg('-t', '--threads', help='number of threads', default=1, type=int)
     
     args = parser.parse_args()
+    num_threads = args.threads
+    ## affects the number of threads used by the FAISS library
+    ## it uses the so-called "internal threading"
+    os.environ['OMP_NUM_THREADS'] = str(num_threads)
+    
+    import numpy as np
+    import faiss
+    import torch
+    torch.set_num_threads(num_threads)
+    torch.set_num_interop_threads(num_threads)
+
     
     infer = Inference(args.model)
     data = args.data
@@ -94,6 +102,6 @@ if __name__ == '__main__':
     else:
         infer(data)
 
-    print("Average time: {:.4f} for {:} events".format(
+    print("Average time: {:.4f} for {:} events with {} threads".format(
         np.sum(infer.time_list)/ len(infer.time_list),
-        len(infer.time_list)))
+        len(infer.time_list), num_threads))

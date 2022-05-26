@@ -207,5 +207,8 @@ int main(int argc, char* argv[])
     tot_time.summary(1);
     printf("Summary of the last event\n");
     tot_time.summaryOneEvent(tot_time.numEvts()-1);
+    std::stringstream ss;
+    ss << "time_t" << nthreads << "_s" << server_type << ".csv";
+    tot_time.save(ss.str());
     return 0;
 }

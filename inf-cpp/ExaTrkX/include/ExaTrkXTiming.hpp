@@ -5,6 +5,7 @@
 #include <chrono>
 #include <ctime>
 #include <stdio.h>
+#include <string>
 
 struct ExaTrkXTime {
     float embedding = 0.0;
@@ -93,6 +94,22 @@ struct ExaTrkXTimeList {
     int numEvts(){
         return (int) embedding.size();
     }
+
+    void save(const std::string& filename) {
+        FILE* fp = fopen(filename.c_str(), "w");
+        if (fp == NULL) {
+            printf("Error: cannot open file %s\n", filename.c_str());
+            return;
+        }
+        fprintf(fp, "embedding,building,filtering,gnn,labeling,total\n");
+        for (int i = 0; i < embedding.size(); i++) {
+            fprintf(fp, "%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+                embedding[i], building[i], filtering[i], gnn[i], labeling[i], total[i]);
+        }
+        fclose(fp);
+    }
+
+
 };
 
 class ExaTrkXTimer
