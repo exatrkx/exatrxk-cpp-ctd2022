@@ -38,33 +38,38 @@ time_s4 = [pd.read_csv(file_dir + '/time_t{:d}_s4.csv'.format(i)) for i in num_t
 # %%
 for idx in range(len(num_threads)):
     array = time_s4[idx].total.to_numpy()[num_threads[idx]:]
+    array = array[array < 1]
     mean, std = np.mean(array), np.std(array)
     plt.hist(array,
         bins=50, label='t{:02}: {:.4f}'.format(num_threads[idx], mean),
         range=(0, 1),
         histtype='step', density=True, lw=2)
 
-plt.xlabel("Time per event [s]")
+plt.xlabel("Time [s]")
 plt.ylabel("Events")
 plt.title("Ensemble Model")
 plt.legend()
-plt.savefig(os.path.join(outdir, "time_ensemble_threading.png"))
+plt.savefig(os.path.join(outdir, "time_ensemble_threading.png"),
+    bbox_inches='tight', dpi=300
+    )
 # %%
 time_s0 = [pd.read_csv(file_dir + '/time_t{:d}_s0.csv'.format(i)) for i in num_threads]
 # %%
 for idx in range(len(num_threads)):
     array = time_s0[idx].total.to_numpy()[num_threads[idx]:]
+    array = array[array < 1]
     mean, std = np.mean(array), np.std(array)
     plt.hist(array,
         bins=50, label='t{:02}: {:.4f}'.format(num_threads[idx], mean),
         range=(0, 1),
         histtype='step', density=True, lw=2)
 
-plt.xlabel("Time per event [s]")
+plt.xlabel("Time [s]")
 plt.ylabel("Events")
 plt.title("Local Model")
 plt.legend()
-plt.savefig(os.path.join(outdir, "time_local_threading.png"))
+plt.savefig(os.path.join(outdir, "time_local_threading.png"),
+    bbox_inches='tight', dpi=300)
 
 # %%
 ###############################################################################
