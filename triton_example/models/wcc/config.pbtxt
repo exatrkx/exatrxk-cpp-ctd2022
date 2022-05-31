@@ -52,5 +52,5 @@ output [
 instance_group [{ kind: KIND_GPU }]
 parameters: {
   key: "EXECUTION_ENV_PATH",
-  value: {string_value: "/global/cfs/cdirs/atlas/xju/software/exatrkx-cpp/triton_example/pymodels/cugraph.tar.gz"}
+  value: {string_value: "/pymodels/cugraph.tar.gz"}
 }

@@ -1,30 +1,23 @@
-# exatrkx-cpp
-C++ version of the exa.trkx ML tracking pipeline
+# ExaTrkX as a Service
 
-$cmake -DCMAKE_INSTALL_PREFIX=`pwd`/install -DTRITON_ENABLE_CC_HTTP=ON -DTRITON_ENABLE_CC_GRPC=ON -DTRITON_ENABLE_PERF_ANALYZER=OFF  -DTRITON_ENABLE_GPU=OFF -DTRITON_ENABLE_EXAMPLES=ON  ..
+This repository houses the C++ implementation of the [ExaTrkX](https://arxiv.org/abs/2103.06995) pipeline
+and the prototype implementation of the ExaTrkX as a service. 
 
-Add 
-#
-# Protobuf
-#
-set(Protobuf_DIR /workspace/build/third-party/protobuf/lib/cmake/protobuf)
-if(TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER)
-  set(protobuf_MODULE_COMPATIBLE TRUE CACHE BOOL "protobuf_MODULE_COMPATIBLE" FORCE)
-  find_package(Protobuf CONFIG REQUIRED PATHS /workspace/build/third-party/protobuf/cmake/protobuf)
-  message(STATUS "Using protobuf ${Protobuf_VERSION}")
-  include_directories(${Protobuf_INCLUDE_DIRS})
-endif() # TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER
 
-#
-# GRPC
-#
-set(gRPC_DIR /workspace/build/third-party/grpc/lib/cmake/grpc)
-if(TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER)
-  find_package(gRPC CONFIG REQUIRED)
-  message(STATUS "Using gRPC ${gRPC_VERSION}")
-  include_directories($<TARGET_PROPERTY:gRPC::grpc,INTERFACE_INCLUDE_DIRECTORIES>)
-endif() # TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER
+The C++ implementation is different from our previous implementation [ACAT2021](https://github.com/exatrkx/exatrkx-acat2021) in
+that previous implementation relies on [onnxruntime](https://github.com/microsoft/onnxruntime)
+ and current one on [TorchScript](https://pytorch.org/tutorials/advanced/cpp_export.html).
 
-to build/_deps/repo-common-src/protobuf/CMakeLists.txt
+# The ExaTrkX as a service
+We use the [Triton server](https://github.com/triton-inference-server) to 
+perform the ExaTrkX pipeline and to schedule requests from clients.
+The triton server models can be found in the folder `triton_examples/models`.
 
-$make
+First get `python_backend` environments from here, and put them into the folder `pymodels`.
+To launch the server:
+```bash
+docker run -it --gpus=1 --rm -p8000:8000 -p8001:8001 -p8002:8002 \
+  --ulimit memlock=-1 --ulimit stack=67108864 --shm-size '1gb' \
+  -v triton_example/models:/models \
+    nvcr.io/nvidia/tritonserver:22.02-py3 tritonserver --model-repository=/models/
+```
