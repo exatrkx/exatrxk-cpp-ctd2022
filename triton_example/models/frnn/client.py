@@ -33,7 +33,7 @@ from numpy import loadtxt
 model_name = "frnn"
 #shape = [4]
 
-with grpcclient.InferenceServerClient("localhost:8001") as client:
+with grpcclient.InferenceServerClient("zeus.lbl.gov:8001") as client:
     #input0_data = np.random.rand(*shape).astype(np.float32)
     #input1_data = np.random.rand(*shape).astype(np.float32)
 

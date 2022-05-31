@@ -33,7 +33,7 @@ from numpy import loadtxt
 model_name = "wcc"
 #shape = [4]
 
-with httpclient.InferenceServerClient("localhost:8000") as client:
+with httpclient.InferenceServerClient("zeus.lbl.gov:8000") as client:
     file_i = open('data/out_fil_edge.csv','rb')
     input0_data = loadtxt(file_i,delimiter=",").astype(np.int64)
     print(input0_data.shape)
@@ -41,17 +41,14 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     input1_data = loadtxt(file_o,delimiter=" ").astype(np.float32)
     print(input1_data.shape)
     inputs = [
-        httpclient.InferInput("NUMNODES", [1],
-                              np_to_triton_dtype(np.int64)),
         httpclient.InferInput("INPUT0", input0_data.shape,
                               np_to_triton_dtype(input0_data.dtype)),
         httpclient.InferInput("INPUT1", input1_data.shape,
                               np_to_triton_dtype(input1_data.dtype)),
     ]
 
-    inputs[0].set_data_from_numpy(np.array([314], dtype=np.int64))
-    inputs[1].set_data_from_numpy(input0_data)
-    inputs[2].set_data_from_numpy(input1_data)
+    inputs[0].set_data_from_numpy(input0_data)
+    inputs[1].set_data_from_numpy(input1_data)
 
     outputs = [
         httpclient.InferRequestedOutput("OUTPUT0"),
