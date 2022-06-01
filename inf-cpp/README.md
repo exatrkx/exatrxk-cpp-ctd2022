@@ -1,5 +1,5 @@
-# exatrkx-acat2021
-The exa.trkx pipeline used for the C++ inference
+# Introduction
+The ExaTrkX pipeline used for the C++ inference.
 
 
 # To compile the C++ pipeline
@@ -43,54 +43,13 @@ CMake Warning at CMakeLists.txt:83 (add_executable):
 
 If so, go ahead and compile the code via `make -j4`.
 
-If everything works so far, you can test the code via `./bin/inference`.
+If everything works so far, you can test the code via `./bin/inference -h`.
 The following is the expected print out
 ```bash
-Building and running a GPU inference engine for Embedding
-314 spacepoints.
-First spacepoint information: 0.0105378 -0.926339 -0.223784 
-Embedding space of libtorch the first SP: 
--0.1243  0.0474 -1.2468  0.4347  1.2621  0.4512  0.5379 -0.0947
-[ CUDAFloatType{1,8} ]
-
-Inserting points
-Prefix Sum
-Counting sorted
-Neigbours to Edges
-Built 2334 edges. 2
- 2  3  5  5  6
- 1  2  2  3  1
-[ CPULongType{2,5} ]
-Get scores for 2334 edges.
-After filtering: 2334 1
- 0.0869
- 0.4881
- 0.4880
- 0.9469
- 0.1455
- 0.1091
- 0.7052
- 0.1135
- 0.0882
-[ CUDAFloatType{9} ]
-After filtering: 584 edges.
- 3  5  5  7  9
- 2  2  3  1  1
-[ CPULongType{2,5} ]
-GNN scores for 584 edges.
- 0.2066
- 0.2166
- 0.9292
- 0.7839
- 0.0437
-[ CPUFloatType{5} ]
-size of components: 314
-22 reconstructed tracks.
-
+Usage: ./bin/inference [-hv] [-d input_file_path] [-s server_type]
+ -s: server type. 0: no server, 1: torch, 2: python, 3: one, 4: combined
+ -d: input data/directory
+ -t: number of threads
+ -v: verbose
 ```
-
-# To run Triton
-Start the triton server with Exa.TrkX models included:
-```bash
-
-```
+To run a test locally: `./bin/inference -s 0`.
